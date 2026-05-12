@@ -16,6 +16,8 @@ metadata:
 
 This is the foundation skill for all gbrain operations. It contains the conventions (loaded via `skill_view()` references) and dispatches to specialized operational skills for specific tasks.
 
+**The resolver** (`references/resolver.md`) is autoloaded into the Hermes system prompt — it teaches the agent WHAT gbrain is and WHEN to use it. This SKILL.md is the dispatcher for HOW to use it.
+
 ## When to Use
 
 Load this skill when:
