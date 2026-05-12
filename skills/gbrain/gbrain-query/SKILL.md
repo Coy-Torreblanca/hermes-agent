@@ -26,12 +26,7 @@ Answer questions using the brain's knowledge with 3-layer search and synthesis.
 
 ## Pre-Flight
 
-Before executing any search, load the brain-first lookup convention:
-
-* Call `skill_view` with `name="second-brain"` and `file_path="references/brain-first.md"`
-
-This ensures the lookup chain (keyword → hybrid → page read) and entity
-conventions are loaded.
+Lookup chain is handled by a `pre_llm_call` plugin — `mcp_gbrain_search` → `mcp_gbrain_query` → `mcp_gbrain_get_page` escalation is automatic. No manual `skill_view` load needed.
 
 ## Contract
 
@@ -48,11 +43,12 @@ This skill guarantees:
    - Keyword search for specific names, dates, terms
    - Semantic query for conceptual questions
    - Structured queries (list by type, backlinks) for relational questions
-2. **Execute searches:**
-   - Keyword search via `mcp_gbrain_search` for FTS matches
-   - Hybrid search via `mcp_gbrain_query` for semantic+keyword with expansion
-   - `mcp_gbrain_list_pages` by type or `mcp_gbrain_get_backlinks` for structural queries
-3. **Read top results.** Read the top 3-5 pages via `mcp_gbrain_get_page` to get full context.
+2. **Execute searches (escalation model):**
+   - **Keyword first.** Start with `mcp_gbrain_search` for FTS matches. This is the fast path and often sufficient.
+   - **Hybrid only when thin.** If keyword results are insufficient (too few hits, low relevance, poor coverage), fall back to `mcp_gbrain_query` for semantic+keyword with expansion.
+   - **get_page when slug found.** Once a relevant page slug is identified, use `mcp_gbrain_get_page` for full context.
+   - For structural queries: `mcp_gbrain_list_pages` by type or `mcp_gbrain_get_backlinks`.
+3. **Read top results.** Review the top 3-5 search results (keyword or hybrid). Load full pages when chunk previews confirm relevance and deeper context is needed.
 4. **Synthesize answer** with citations. Every claim traces back to a specific page slug.
 5. **Flag gaps.** If the brain doesn't have info, say "the brain doesn't have information on X" rather than hallucinating.
 

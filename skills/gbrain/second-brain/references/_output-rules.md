@@ -10,7 +10,7 @@ All links in brain pages MUST be deterministic (built from actual data, not comp
 by the LLM). Never guess a URL or path. Build it from the slug, the commit hash, or
 the API response.
 
-- Brain page links: `[page title](type/slug.md)`
+- Brain page links: `[page title](type/slug)`
 - Commit links: `[abc1234](https://github.com/{owner}/{repo}/commit/abc1234)`
 - External links: use the actual URL from the source, never reconstruct it
 

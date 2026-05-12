@@ -32,9 +32,9 @@ Load this skill when:
 |---------|-------|
 | "write this to gbrain", "create a page for", "save this" | `gbrain-page-writer` |
 | "search for", "what do we know about", "look up" | `gbrain-query` |
-| "enrich", "create person page", "update company page" | `gbrain-enrich` |
-| "ingest this link/article/idea" | `gbrain-ingest` |
-| "brain health", "check citations", "maintenance" | `gbrain-maintain` |
+| "enrich", "create person page", "update company page" | `gbrain-enrich` (Phase 2) |
+| "ingest this link/article/idea" | `gbrain-ingest` (Phase 2) |
+| "brain health", "check citations", "maintenance" | `gbrain-maintain` (Phase 2) |
 
 ## Deep References (Context Expansion)
 
@@ -49,3 +49,7 @@ Before filing content or creating a new page, load the filing rules:
 Before writing page content, load the schema:
 
 * Call `skill_view` with `name="second-brain"` and `file_path="references/schema.md"`
+
+Before finalizing page output, load the output rules:
+
+* Call `skill_view` with `name="second-brain"` and `file_path="references/_output-rules.md"`

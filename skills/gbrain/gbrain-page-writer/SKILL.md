@@ -40,10 +40,7 @@ Follow the decision protocol from _brain-filing-rules.md:
 1. Identify the PRIMARY SUBJECT (a person? company? concept? project?)
 2. Determine the directory: people/, companies/, projects/, concepts/, etc.
 3. Form the slug: `directory/slug-name` (NO .md extension for gbrain slugs)
-   - People: `people/first-last` (lowercase, hyphens)
-   - Companies: `companies/company-name`
-   - Concepts: `concepts/concept-name`
-   - Projects: `projects/project-name`
+   - Follow the decision protocol from _brain-filing-rules.md (loaded in Step 1) for the complete directory listing (people/, companies/, concepts/, originals/, meetings/, media/, sources/, civic/, etc.)
 
 ### Step 3: Dedup Check
 

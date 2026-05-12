@@ -70,7 +70,7 @@ the new page links to the entity, AND the entity's page links back.
 
 Format for back-links (append to Timeline or See Also):
 ```
-- **YYYY-MM-DD** | Referenced in [page title](path/to/page.md) -- brief context
+- **YYYY-MM-DD** | Referenced in [page title](path/to/page) -- brief context
 ```
 
 An unlinked mention is a broken brain. The graph is the intelligence.

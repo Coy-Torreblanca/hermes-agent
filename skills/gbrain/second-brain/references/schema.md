@@ -176,9 +176,9 @@ is the highest-confidence signal in the system.
 ## Entity Identity & Deduplication (MANDATORY)
 
 ### Canonical slugs
-- People: `first-last.md` (lowercase, hyphens for spaces)
-- Companies: `company-name.md`
-- Disambiguation: `david-liu-crustdata.md`, `david-liu-meta.md`
+- People: `first-last` (lowercase, hyphens for spaces)
+- Companies: `company-name`
+- Disambiguation: `david-liu-crustdata`, `david-liu-meta`
 
 The filename IS the identity. All references, cross-links, and .raw/ sidecars
 use this slug.
