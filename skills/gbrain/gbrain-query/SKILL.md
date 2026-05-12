@@ -24,10 +24,6 @@ mutating: false
 
 Answer questions using the brain's knowledge with 3-layer search and synthesis.
 
-## Pre-Flight
-
-Lookup chain is handled by a `pre_llm_call` plugin — `mcp_gbrain_search` → `mcp_gbrain_query` → `mcp_gbrain_get_page` escalation is automatic. No manual `skill_view` load needed.
-
 ## Contract
 
 This skill guarantees:

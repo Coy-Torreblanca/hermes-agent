@@ -39,8 +39,31 @@ Log delight (positive signal) when:
 Be specific: "doctor says `schema_version=0` and points at apply-migrations, but
 apply-migrations exits with no output" beats "doctor was confusing."
 
-## Inspection
+## How to Log
 
-Friction reports are collected by the harness and rendered as markdown reports.
-Redaction strips `$HOME`/`$CWD` to `<HOME>`/`<CWD>` placeholders so reports paste
-safely into PRs and issues.
+Log friction as a timeline entry on the brain's friction page:
+
+```
+mcp_gbrain_add_timeline_entry(
+    slug="wiki/friction-log",
+    date="YYYY-MM-DD",
+    summary="<severity>: <one-line-what-happened>",
+    detail="Phase: <which-operation>. Hint: <what-could-be-better>."
+)
+```
+
+If the friction page doesn't exist yet, create it first via `mcp_gbrain_put_page`:
+
+```
+slug: wiki/friction-log
+type: log
+title: Friction Log
+---
+# Friction Log
+
+## Timeline
+```
+
+Then append timeline entries as friction occurs.
+
+Alternatively, use `mcp_gbrain_log_ingest` to record friction as an ingestion event with `source_type: "friction"`.

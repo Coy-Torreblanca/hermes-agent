@@ -28,13 +28,13 @@ Load this skill when:
 
 ## Sub-Skills (Load as Needed)
 
-| Trigger | Skill |
-|---------|-------|
-| "write this to gbrain", "create a page for", "save this" | `gbrain-page-writer` |
-| "search for", "what do we know about", "look up" | `gbrain-query` |
-| "enrich", "create person page", "update company page" | `gbrain-enrich` (Phase 2) |
-| "ingest this link/article/idea" | `gbrain-ingest` (Phase 2) |
-| "brain health", "check citations", "maintenance" | `gbrain-maintain` (Phase 2) |
+| Trigger | Action |
+|---------|--------|
+| "write this to gbrain", "create a page for", "save this" | Call `skill_view` with `name="gbrain-page-writer"` |
+| "search for", "what do we know about", "look up" | Call `skill_view` with `name="gbrain-query"` |
+| "enrich", "create person page" (Phase 2) | Call `skill_view` with `name="gbrain-enrich"` |
+| "ingest this link/article/idea" (Phase 2) | Call `skill_view` with `name="gbrain-ingest"` |
+| "brain health", "maintenance" (Phase 2) | Call `skill_view` with `name="gbrain-maintain"` |
 
 ## Deep References (Context Expansion)
 
