@@ -48,63 +48,54 @@ aliases: ["J. Doe", "jdoe@company.com", "@janedoe"]
 
 ## Person Page Template
 
-Copy-pasteable. All sections optional — use `[No data yet]` rather than
-omitting. The structure itself prompts future enrichment.
+Copy-pasteable. All sections optional — use `[No data yet]` rather than omitting.
+The structure itself prompts future enrichment. Fill what matters for YOUR relationship
+with this person — not every section applies to everyone.
 
 ```markdown
 # Person Name
 
-> Executive summary: who they are, why they matter, what you should
-> know walking into any interaction.
+> Executive summary: who they are to you, what you should know
+> walking into any interaction.
 
-## State
-- **Role:** current title
-- **Company:** current org
-- **Relationship:** to you (friend, colleague, investor, etc.)
+## The Basics
+- **Relationship:** how you know them (family, friend, colleague, neighbor, etc.)
+- **Birthday:** (if known — important for personal relationships)
+- **Location:** where they live
 - **Key context:** 2–4 bullets of what matters right now
 
-## What They Believe
-Worldview, positions, first principles. Every claim cites source + type:
-- [Belief] — observed: [tweet/meeting/article, date]
-- [Belief] — self-described: [interview/bio, date]
-- [Belief] — inferred: [pattern across N interactions, confidence: high/medium/low]
+## Who They Are
+Personality, character, values. What kind of person are they?
+- [Trait] — observed: [context, date]
+- [Trait] — self-described: [context, date]
 
-## What They're Building
-Current projects, recent ships, product direction.
+## Likes & Dislikes
+What they enjoy, what they avoid. Use for gifts, activities, conversations.
+- **Likes:** [food, music, hobbies, topics, activities]
+- **Dislikes:** [things to avoid suggesting or bringing up]
 
-## What Motivates Them
-Ambition drivers, career arc. Distinguish self-described from observed/inferred.
+## Important Relationships
+- **Family:** spouse, kids, parents, siblings (names if known)
+- **Close to:** people they're frequently with or mention
+- **Your dynamic:** history, temperature, how you interact
 
 ## Communication Style
 How they prefer to communicate. How they handle disagreement.
-Only from direct observation (meetings, emails, tweets). Never generalize from
-a single data point. Mark confidence level.
+Only from direct observation. Never generalize from a single data point.
 
-## Hobby Horses
-Topics they return to obsessively. Recurring themes in their public voice.
+## Current Situation
+What's going on in their life right now — challenges, changes, joys.
+Updates from recent conversations or observations.
 
-## Assessment
-- **Strengths:** be specific
-- **Gaps:** be specific and fair
-- **Net read:** one-line synthesis
-- **Confidence:** high (5+ interactions) / medium (2–4) / low (1 or inferred)
-- **Last assessed:** YYYY-MM-DD
-
-## Trajectory
-Ascending, plateauing, pivoting, declining? Evidence.
-
-## Relationship
-History of interactions, temperature, dynamic.
+## Shared History
+Key moments, inside jokes, things you've done together.
+This is what makes the relationship real.
 
 ## Contact
-- Email, phone, X handle, LinkedIn, location
-
-## Network
-- **Close to:** people they're frequently seen with
-- **Crew:** which cluster they belong to
+- Phone, email, address, social handles
 
 ## Open Threads
-- Active items, pending intros, follow-ups
+- Active items: things to follow up on, promises made, questions to ask
 
 ---
 
@@ -112,20 +103,45 @@ History of interactions, temperature, dynamic.
 - **YYYY-MM-DD** | Source — What happened.
 ```
 
+### Optional Business Sections
+
+If this person is also a professional contact, add below **The Basics**:
+
+```
+## Professional
+- **Role:** current title
+- **Company/Organization:** where they work
+- **Industry/Field:** what they do
+- **What They're Building:** current projects, direction
+- **Career Context:** relevant background, trajectory
+```
+
+If you need deeper professional assessment, add:
+
+```
+## Professional Assessment
+- **Strengths:** be specific
+- **Gaps:** be specific and fair
+- **Net read:** one-line synthesis
+- **Confidence:** high (5+ interactions) / medium (2–4) / low (1 or inferred)
+```
+
 ---
 
-## Company Page Template
+## Organization / Company Page Template
+
+Use for any organization: companies, churches, nonprofits, schools, clubs.
 
 ```markdown
-# Company Name
+# Organization Name
 
-> What they do, stage, why they matter.
+> What they do, why they matter to you.
 
 ## State
 - **What:** one-line description
-- **Stage:** Seed / Series A / Growth / Public
+- **Type:** company / nonprofit / church / school / etc.
+- **Size/Scale:** rough sense (local, regional, national, headcount, etc.)
 - **Key people:** names with links to people pages
-- **Key metrics:** revenue, headcount, funding
 - **Connection:** how they relate to your world
 
 ## Open Threads
@@ -140,8 +156,8 @@ History of interactions, temperature, dynamic.
 
 ## Epistemic Discipline (MANDATORY)
 
-Context sections (Beliefs, Motivations, Communication Style, Assessment) are
-highest-value but most prone to hallucination. Rules:
+Context sections (Who They Are, Likes & Dislikes, Current Situation, Professional Assessment)
+are highest-value but most prone to hallucination. Rules:
 
 ### Every claim cites its source
 Not "she's aggressive" but "she pushed back hard on pricing in the March 15
@@ -151,20 +167,20 @@ meeting (observed)."
 
 | Label | Meaning | Example |
 |-------|---------|---------|
-| `observed` | You saw it happen | meeting behavior, emails, tweets |
-| `self-described` | They said it about themselves | interview, bio, public statement |
+| `observed` | You saw it happen | conversation behavior, messages, interactions |
+| `self-described` | They said it about themselves | they told you, bio, public statement |
 | `inferred` | Reading between lines | pattern across N interactions |
 
 ### Confidence tracks interaction count
-- **1 meeting** → low confidence. Don't write definitive assessments.
-- **5+ meetings** → high confidence.
+- **1 interaction** → low confidence. Don't write definitive assessments.
+- **5+ interactions** → high confidence.
 - Mark confidence explicitly: `confidence: high/medium/low`
 
 ### Recency matters
-A belief from 2 years ago may not be current. Mark dates. Update stale sections.
+A trait from 2 years ago may not be current. Mark dates. Update stale sections.
 
 ### Never generalize from a single data point
-"She seemed frustrated in one meeting" → timeline entry.
+"She seemed frustrated in one conversation" → timeline entry.
 "This person is easily frustrated" → requires multiple observations.
 
 ### User corrections override everything
@@ -177,7 +193,7 @@ is the highest-confidence signal in the system.
 
 ### Canonical slugs
 - People: `first-last` (lowercase, hyphens for spaces)
-- Companies: `company-name`
+- Organizations: `organization-name` (companies, churches, nonprofits, schools)
 - Disambiguation: `david-liu-crustdata`, `david-liu-meta`
 
 The filename IS the identity. All references, cross-links, and .raw/ sidecars
