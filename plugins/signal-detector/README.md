@@ -83,6 +83,27 @@ Uptime: 2.3h  |  Process: 847 msgs (6.1/min)
   Est. total:        $0.0752
 ```
 
+**Live Logs** - 
+```
+# ── LIVE WATCH (most useful) ──
+tail -f ~/.hermes/logs/agent.log | grep -i "signal-detector\|classif\|timeout"
+
+# ── CHECK REGISTRATIONS ──
+grep "registered.*signal" ~/.hermes/logs/agent.log
+
+# ── CHECK ACTUAL CLASSIFICATIONS ──
+grep "classif" ~/.hermes/logs/agent.log
+
+# ── CHECK FAILURES ──
+grep -E "timeout|failed|error.*signal|NO_API_KEY" ~/.hermes/logs/agent.log
+
+# ── CHECK MCP ERRORS ──
+tail -30 ~/.hermes/logs/mcp-stderr.log
+
+# ── CHECK WHAT PLUGINS ARE ENABLED ──
+hermes plugins list | grep signal
+```
+
 ## Testing / Diagnostics
 
 ### Test a specific message

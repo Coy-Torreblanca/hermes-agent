@@ -179,23 +179,41 @@ _REQUEST_TIMEOUT = 5.0  # seconds — must not block the agent
 
 
 def _get_api_key() -> Optional[str]:
-    """Read DeepSeek API key from environment or Hermes config."""
+    """Read DeepSeek API key from environment, Hermes config, or .env file."""
     key = os.environ.get("DEEPSEEK_API_KEY", "")
     if key:
         return key
 
-    # Try Hermes config
     try:
         from hermes_constants import get_hermes_home
         import yaml
 
-        config_path = get_hermes_home() / "config.yaml"
+        hermes_home = get_hermes_home()
+
+        # Try config.yaml (providers.deepseek.api_key)
+        config_path = hermes_home / "config.yaml"
         if config_path.exists():
             with open(config_path) as f:
                 config = yaml.safe_load(f) or {}
             providers = config.get("providers", {})
             deepseek = providers.get("deepseek", {})
-            key = deepseek.get("api_key", "") or os.environ.get("DEEPSEEK_API_KEY", "")
+            key = deepseek.get("api_key", "")
+            if key:
+                return key
+
+        # Try .env file (DEEPSEEK_API_KEY=...)
+        env_path = hermes_home / ".env"
+        if env_path.exists():
+            with open(env_path) as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith("DEEPSEEK_API_KEY=") and "=" in line:
+                        key = line.split("=", 1)[1].strip().strip('"').strip("'")
+                        if key:
+                            return key
+
+        # Last resort: re-check environment (may have been loaded since)
+        key = os.environ.get("DEEPSEEK_API_KEY", "")
     except Exception:
         pass
 
@@ -258,7 +276,7 @@ def _classify(
         resp = httpx.post(
             _DEEPSEEK_URL,
             json={
-                "model": "deepseek-v4-pro",
+                "model": "deepseek-chat",
                 "messages": messages,
                 "max_tokens": 256,
                 "temperature": 0.0,
