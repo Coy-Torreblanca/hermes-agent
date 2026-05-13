@@ -48,3 +48,23 @@ From there, the skill will route you to the right sub-skill (`gbrain-page-writer
 3. **Back-link everything.** Every entity mention must link back. An unlinked mention is a broken brain.
 4. **Preserve exact phrasing.** The user's language IS the insight. Never paraphrase.
 5. **Dedup before create.** Search existing pages before creating new ones.
+
+## Signal Detector Protocol (NON-NEGOTIABLE)
+
+The Signal Detector injects signals into your input — [BRAIN CONTEXT
+NEEDED] for reads, [SIGNAL: possible write needed] for writes. Both
+are the same contract: see a signal, act on it in the same turn.
+
+Same-turn resolution means exactly one of:
+
+1. ACT — Load the indicated skill and do what the signal asks.
+2. EXPLICITLY DECLINE — Name the signal and your reason for not
+   acting. "Already written this session," "not notable," "user
+   hasn't confirmed." Specific, honest, immediate.
+3. BOTH (when both appear) — Read first (get context), then write.
+
+Invalid: silence, "noted," "I'll handle that later," acknowledging
+the signal in prose without following through.
+
+An unacknowledged signal is a dropped fact. Every signal resolves
+in the same turn.
