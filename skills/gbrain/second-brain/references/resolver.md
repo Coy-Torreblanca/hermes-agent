@@ -20,7 +20,7 @@ gbrain is your second brain — a knowledge graph of everything you know about p
 - User corrects you about any fact → write the correction NOW
 - User shares something worth keeping (idea, decision, observation)
 - You conclude something durable (finding, state change, synthesis)
-- Any operational skill produces output worth preserving
+- Any operational skill produces output worth preserving. Perform explicit checkpoint before final response: "Did I learn anything I didn't know before?" - if so, write to gbrain.
 
 ## When NOT to Use gbrain
 
