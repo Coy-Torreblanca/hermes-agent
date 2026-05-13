@@ -1,0 +1,12 @@
+name: signal-detector
+version: 1.0.0
+kind: standalone
+description: "Second Brain Signal Detector — pre_llm_call context surfacing + write detection via DeepSeek Fast classification. Filters operational messages, gates expensive gbrain queries behind lightweight LLM classification, and detects write-worthy content for gbrain ingestion."
+author: CoyDiego
+hooks:
+  - pre_llm_call
+requires_env:
+  - name: DEEPSEEK_API_KEY
+    description: "DeepSeek API key for cost-optimized classification (~$0.0001/msg)"
+    url: "https://platform.deepseek.com/api_keys"
+    secret: true
