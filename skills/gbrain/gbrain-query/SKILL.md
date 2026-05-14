@@ -64,15 +64,6 @@ Answers should include:
 - Gap flags: "The brain doesn't have information on X"
 - Conflict notes when sources disagree
 
-## Quality Rules
-
-- Never hallucinate. Only answer from brain content.
-- Cite sources: "According to concepts/do-things-that-dont-scale..."
-- Flag stale results: if a search result shows [STALE], note that the info may be outdated
-- For "who" questions, use `mcp_gbrain_get_backlinks` and typed links to find connections
-- For "what happened" questions, use `mcp_gbrain_get_timeline`
-- For "what do we know" questions, read compiled_truth directly via `mcp_gbrain_get_page`
-
 ## Token-Budget Awareness
 
 Search returns **chunks**, not full pages. Read the excerpts first before deciding
@@ -86,17 +77,10 @@ whether to load a full page.
 - **"Tell me about X"** — get the full page (the user wants the complete picture).
 - **"Did anyone mention Y?"** — search results are enough (the user wants a yes/no with evidence).
 
-### Source precedence
+### Source precedence (see second-brain/references/quality.md)
 
-When multiple sources provide conflicting information, follow this precedence:
-
-1. **User's direct statements** (highest authority — what the user told you directly)
-2. **Compiled truth** (the brain's synthesized, cited understanding)
-3. **Timeline entries** (raw evidence, reverse-chronological)
-4. **External sources** (web search, API enrichment — lowest authority)
-
-When sources conflict, note the contradiction with both citations. Don't silently
-pick one.
+Follow the canonical source precedence from `quality.md`: User's direct statements > compiled truth > timeline > external sources.
+When sources conflict, note the contradiction with both citations.
 
 ## Citation in Answers
 
@@ -105,6 +89,8 @@ When referencing brain pages in your answer, propagate inline citations:
 - When brain pages have inline `[Source: ...]` citations, propagate them so
   the user can trace facts to their origin
 - When you synthesize across multiple pages, cite all sources
+
+Quality conventions (citations, back-links, notability) are defined in `second-brain/references/quality.md` — load them with `skill_view()`.
 
 ## Graph Traversal
 

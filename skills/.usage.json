@@ -1,0 +1,74 @@
+{
+  "gbrain-article-enrichment": {
+    "archived_at": null,
+    "created_at": "2026-05-13T21:16:11.786192+00:00",
+    "last_patched_at": "2026-05-13T21:16:49.914981+00:00",
+    "last_used_at": "2026-05-13T21:16:11.797003+00:00",
+    "last_viewed_at": "2026-05-13T21:16:11.786238+00:00",
+    "patch_count": 1,
+    "pinned": false,
+    "state": "active",
+    "use_count": 1,
+    "view_count": 1
+  },
+  "gbrain-citation-fixer": {
+    "archived_at": null,
+    "created_at": "2026-05-14T13:48:32.488714+00:00",
+    "last_patched_at": null,
+    "last_used_at": null,
+    "last_viewed_at": "2026-05-14T13:48:32.488739+00:00",
+    "patch_count": 0,
+    "pinned": false,
+    "state": "active",
+    "use_count": 0,
+    "view_count": 1
+  },
+  "gbrain-enrich": {
+    "archived_at": null,
+    "created_at": "2026-05-14T13:42:51.313769+00:00",
+    "last_patched_at": null,
+    "last_used_at": "2026-05-14T13:42:51.325468+00:00",
+    "last_viewed_at": "2026-05-14T13:48:32.525745+00:00",
+    "patch_count": 0,
+    "pinned": false,
+    "state": "active",
+    "use_count": 1,
+    "view_count": 2
+  },
+  "gbrain-reports": {
+    "archived_at": null,
+    "created_at": "2026-05-14T13:48:32.692671+00:00",
+    "last_patched_at": null,
+    "last_used_at": "2026-05-14T13:48:32.751745+00:00",
+    "last_viewed_at": "2026-05-14T13:48:32.692695+00:00",
+    "patch_count": 0,
+    "pinned": false,
+    "state": "active",
+    "use_count": 1,
+    "view_count": 1
+  },
+  "gbrain-voice-note-ingest": {
+    "archived_at": null,
+    "created_at": "2026-05-14T13:48:32.573544+00:00",
+    "last_patched_at": null,
+    "last_used_at": "2026-05-14T13:48:32.573573+00:00",
+    "last_viewed_at": null,
+    "patch_count": 0,
+    "pinned": false,
+    "state": "active",
+    "use_count": 1,
+    "view_count": 0
+  },
+  "hermes-cron": {
+    "archived_at": null,
+    "created_at": "2026-05-13T21:48:16.425883+00:00",
+    "last_patched_at": "2026-05-13T21:54:08.695503+00:00",
+    "last_used_at": "2026-05-14T13:35:06.092302+00:00",
+    "last_viewed_at": "2026-05-14T13:35:06.071787+00:00",
+    "patch_count": 2,
+    "pinned": false,
+    "state": "active",
+    "use_count": 1,
+    "view_count": 1
+  }
+}

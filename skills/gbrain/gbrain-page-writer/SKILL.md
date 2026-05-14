@@ -87,7 +87,7 @@ If this write was triggered by an event (conversation, decision, observation):
 For every person/company mentioned in the page that has a brain page:
 `mcp_gbrain_add_link(from="<this_page>", to="<entity_page>", link_type="references")`
 
-Iron Law: An unlinked mention is a broken brain.
+Back-linking is mandatory — see `second-brain/references/quality.md`.
 
 ## Common Pitfalls
 
@@ -105,6 +105,5 @@ Iron Law: An unlinked mention is a broken brain.
 - [ ] Slug follows filing rules (primary subject → directory)
 - [ ] Frontmatter present (type, title, tags, created)
 - [ ] Two-layer structure (compiled truth + timeline)
-- [ ] Every fact has [Source: ...] citation
-- [ ] Back-links created for mentioned entities
+- [ ] Quality conventions followed (citations, back-links, notability — see second-brain/references/quality.md)
 - [ ] Timeline entry added if event-driven
