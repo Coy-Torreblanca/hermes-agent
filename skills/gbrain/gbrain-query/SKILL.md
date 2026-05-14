@@ -55,6 +55,20 @@ This skill guarantees:
 - Silently picking one source when sources conflict
 - Loading full pages when search chunks are sufficient
 - Ignoring source precedence (user statements are highest authority)
+- **Trusting stale operational state from brain pages** — brain data about infrastructure (running processes, service status, file existence) can be hours or days old. If the last `updated_at` is more than a few hours ago for an operational claim, verify against the live system before repeating it as fact. This was a hard-learned lesson: requirements pages frequently list infrastructure pre-requisites as "TODO" even after they've been completed, and vice versa.
+
+## Stale Data Awareness (READ THIS FIRST)
+
+Brain pages can become stale — a page last updated 2 days ago may describe system state that no longer reflects reality.
+
+When the user asks about **operational or infrastructure claims** (is process X running, does file Y exist, what is the current state of Z):
+
+1. **Check the page's `updated_at` timestamp** — if it's more than a few hours old for operational state, the data may be stale.
+2. **Verify against the actual system** before repeating the claim — run `terminal` commands (`ps aux`, `ls`, `cat /proc/*/cmdline`) or other probes to confirm.
+3. **Flag the discrepancy** in your answer: "The requirements page says X, but I verified on the live system and found Y."
+4. **Update the brain page** with the verified finding so the next session doesn't repeat the stale claim.
+
+This does NOT apply to durable knowledge (people, companies, concepts, decisions) — those are stable even if the page hasn't been recently updated. It applies specifically to operational assertions about infrastructure state (running processes, file existence, deployment status, cron health, service availability).
 
 ## Output Format
 

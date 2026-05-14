@@ -1,6 +1,6 @@
 ---
 name: hermes-agent-skill-authoring
-description: "Author in-repo SKILL.md: frontmatter, validator, structure."
+description: "Author and maintain the skill library: SKILL.md format, class-level architecture, preference embedding, active maintenance. Covers in-repo and user-local skills."
 version: 1.0.0
 author: Hermes Agent
 license: MIT
@@ -13,6 +13,58 @@ metadata:
 # Authoring Hermes-Agent Skills (in-repo)
 
 ## Overview
+
+Skills live in two locations:
+
+## Skill Library Architecture
+
+Skills are the agent's procedural memory — reusable approaches for recurring task classes. The library must be well-structured for both the agent to find the right skill and the user to maintain it.
+
+### Class-Level, Not Flat
+
+Every skill should represent a **class of task**, not a single session's work. Signals a name is too narrow:
+- Contains a specific PR number, error string, feature codename, or date
+- Only makes sense in the context of today's debug session
+- Describes a one-off fix rather than a reusable approach
+
+Good names: `systematic-debugging`, `debugging-hermes-tui-commands`, `test-driven-development`
+Bad names: `fix-the-403-on-parse-endpoint`, `debug-session-may-14`, `audit-traefik-logs-today`
+
+If the name only makes sense for today's task, fall back to extending an existing umbrella or adding a support file under it.
+
+### Rich SKILL.md + References/ Directory
+
+Each umbrella skill should have:
+- **SKILL.md**: The governing document — triggers, workflow, pitfalls, conventions. This is where preferences and corrections live (not in memory).
+- **`references/`**: Session-specific detail — error transcripts, reproduction recipes, provider quirks, condensed knowledge banks (quoted research, API docs, domain notes). Write them concise; they are not mirrors of upstream docs.
+- **`templates/`**: Starter files meant to be copied and modified — boilerplate configs, scaffolding, known-good examples.
+- **`scripts/`**: Statically re-runnable actions — verification scripts, fixture generators, deterministic probes.
+
+A long flat list of narrow skills means the agent can't find the right one, and the user has to maintain dozens of near-identical entries.
+
+### Embedding User Preferences in SKILL.md Body
+
+When the user corrects your style, tone, format, workflow, or approach, the correction belongs in the **SKILL.md body** of the skill that governs that class of task — not just in memory.
+
+Memory captures: "who the user is and what the current situation is."
+Skills capture: "how to do this class of task for this user."
+
+Priority order for embedding:
+1. **User style/format criticism** → update the relevant skill's "Common Pitfalls" or add a "Style" subsection
+2. **User workflow/sequence correction** → update the relevant skill's workflow steps or triggers
+3. **New technique/tool-usage pattern** → add as a recipe or pitfall in the governing skill
+
+When you receive a correction signal from the user or the signal detector, do not just save it to memory. Update the skill immediately.
+
+### Active Maintenance (Default On)
+
+"Nothing to save" should not be the default. Every session should produce at least one skill update — even if small. Scan for these signals every session:
+- User corrected your approach or style → embed in governing skill
+- A skill you loaded was outdated → patch it now
+- You discovered a new technique, fix, or workaround → capture it
+- A new class of task appeared → consider creating an umbrella
+
+A pass that does nothing is a missed learning opportunity, not a neutral outcome.
 
 There are two places a SKILL.md can live:
 
@@ -147,9 +199,15 @@ Pick the closest existing category. Don't invent new top-level categories casual
 
 5. **Writing a skill that duplicates a peer.** Before creating, `ls skills/<category>/` and open 2-3 peers. Prefer extending an existing skill to creating a narrow sibling.
 
-6. **Expecting the current session to see the new skill.** It won't. The skill loader is initialized at session start. Verify in a fresh session or via `skill_view` using the exact path.
+6. **Duplicating cross-cutting conventions (MECE violation).** Quality rules (citations, back-links, source precedence) and domain conventions (filing rules, schemas) belong in centralized reference files loaded via `skill_view()`, not redefined inline in each skill. If multiple skills repeat the same rules verbatim, they violate MECE — the rule is defined in one place and referenced, not copied. Before adding a "Quality Rules" or "Conventions" section to any skill, check if a canonical version already exists in a reference file under the governing umbrella skill. If it does, remove the inline duplication and add a `skill_view()` call instead.
 
-7. **Linking to skills that don't exist in-repo.** `related_skills: [some-user-local-skill]` works for you but breaks for other clones. Prefer only in-repo links.
+7. **Expecting the current session to see the new skill.** It won't. The skill loader is initialized at session start. Verify in a fresh session or via `skill_view` using the exact path.
+
+8. **Linking to skills that don't exist in-repo.** `related_skills: [some-user-local-skill]` works for you but breaks for other clones. Prefer only in-repo links.
+
+9. **Skipping skill updates after a clean session.** "Nothing to save" is a real option but should NOT be the default. Every session produces at least one learning — a correction, a technique, a pitfall. Scan for it and capture it. A pass that does nothing is a missed learning opportunity.
+
+10. **Putting corrections in memory instead of SKILL.md.** When the user corrects your style, workflow, or approach, embed the lesson in the skill body that governs that task class. Memory captures who the user is; skills capture how to work for this user. If the correction is about how to do the task, it belongs in the skill.
 
 ## Verification Checklist
 

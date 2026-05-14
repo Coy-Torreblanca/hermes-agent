@@ -1,7 +1,7 @@
 ---
 name: hermes-cron
 description: "Create and manage long-running Hermes cron jobs using the /app/hermes_cron pattern. Declarative config-driven cron jobs with deterministic sync. Covers config.yaml structure, sync.py, field reference, and when to use cron vs skills."
-version: 1.0.0
+version: 1.1.0
 author: Coy
 license: MIT
 metadata:
@@ -57,7 +57,7 @@ jobs:
     prompt: <string>                # Self-contained instruction for the job (MANDATORY)
     skills:                         # Skills to load before running (optional)
       - <skill-name>
-    deliver: <target>               # "origin" (default), "discord", "telegram", or "local"
+    deliver: <target>               # "origin" (default), "discord", "discord:CHANNEL_ID", "telegram", or "local"
     enabled_toolsets:               # Restrict tools to reduce context (optional)
       - terminal
       - file
@@ -66,7 +66,7 @@ jobs:
       model: <model-name>
     repeat: <number>                # Run N times then stop (optional)
     workdir: <path>                 # Working directory for the job (optional)
-    script: <path>                  # Pre-run script path (optional)
+    script: <path>                  # Pre-run script whose stdout is injected as context (optional)
     context_from:                   # Inject output from other jobs (optional)
       - <other-job-name>
 ```
@@ -79,13 +79,45 @@ jobs:
 | `schedule` | ✅ | string | Cron expression (`"0 9 * * *"`), interval (`"every 2h"`, `"30m"`), or ISO timestamp (`"2026-05-20T09:00:00"`). |
 | `prompt` | ✅ | string | **Self-contained instruction.** The cron job runs in a fresh session with no conversation context. The prompt must be complete enough that a new agent session can execute it without any prior knowledge. Include all steps, tool calls, and format instructions. |
 | `skills` | ❌ | list | Skills to load before the job runs. The cron session loads these via `skill_view()` before following the prompt. Example: `["second-brain", "gbrain-maintain"]`. |
-| `deliver` | ❌ | string | Where to deliver the job's final response. `"origin"` = return to current chat (default), `"discord"` = Discord home, `"telegram"` = Telegram home, `"local"` = save to `~/.hermes/cron/output/` only. |
+| `deliver` | ❌ | string | Where to deliver the job's final response. `"origin"` = return to current chat (default), `"discord"` = Discord home, `"discord:CHANNEL_ID"` = specific Discord channel (e.g., `"discord:1501428244833108018"`), `"telegram"` = Telegram home, `"local"` = save to `~/.hermes/cron/output/` only. |
 | `enabled_toolsets` | ❌ | list | Restrict the agent to specific toolsets. Omitting gives all default tools. Common: `["terminal", "file"]` for minimal jobs that just read/report, or omit for jobs that need gbrain MCP tools. |
 | `model` | ❌ | dict | Override the model for this specific job. Format: `{provider: "openai", model: "gpt-4o"}`. Provider is pinned at creation time if omitted. |
 | `repeat` | ❌ | int | Run the job N times then stop. Omit for recurring jobs (runs until removed). |
 | `workdir` | ❌ | string | Absolute path to run the job from. Project context files (AGENTS.md, etc.) from that path are injected into the system prompt. Jobs with workdir run sequentially to keep directories isolated. |
-| `script` | ❌ | string | Path to a Python script whose stdout is injected as context before the job runs. Relative paths resolve under `~/.hermes/scripts/`. Use for data collection and change detection. |
-| `context_from` | ❌ | list | Job name(s) whose most recent output is injected as context before each run. Chain jobs: job A collects data, job B processes it. |
+| `script` | ❌ | string | Path to a script whose stdout is injected as context before the job runs. Use for cheap data collection: a shell/Python script runs probes, outputs structured findings, then the LLM session reads those and makes decisions. |
+| `context_from` | ❌ | list | Job name(s) whose most recent output is injected as context before each run. Chain jobs: job A collects data (or runs a script), job B processes the output with LLM reasoning. |
+
+### Using `script` and `context_from` for Data-Collection Chaining
+
+A powerful pattern for cron jobs that need to check system state without
+running expensive LLM inference on every execution:
+
+**Pattern: Script collects data, cron LLM decides what to update.**
+
+```yaml
+- name: system-probe
+  schedule: "0 5 * * *"
+  # No prompt — just a data-collection script. Standard cron runs at 5 AM.
+  script: /app/healthcheck.sh
+  deliver: local
+
+- name: page-updater
+  schedule: "0 6 * * *"
+  prompt: |
+    Read the system-probe output injected below.
+    Compare against the current brain page state.
+    If anything changed, update the page.
+  context_from:
+    - system-probe
+  skills:
+    - second-brain
+  deliver: discord
+```
+
+The `script:` field runs the script directly (no LLM). Its stdout is captured
+and injected as context into the cron session. The `context_from:` field chains
+results from other jobs — useful for multi-stage pipelines where the first job
+collects data and the second reasons about it.
 
 ## Step-by-Step: Adding a New Cron Job
 
@@ -145,6 +177,11 @@ Edit `/app/hermes_cron/config.yaml`:
   deliver: discord
 ```
 
+**YAML indentation note:** All job entries use `- name:` at column 0 (no leading
+spaces). Inner fields (`schedule`, `prompt`, etc.) use 2-space indent. Mixing
+indentation styles (e.g., `  - name:` with leading spaces) causes the job to
+not match `^- name:` grep patterns and breaks sync.py matching.
+
 ### 4. Sync
 
 ```bash
@@ -181,15 +218,26 @@ When a skill should be a recurring scheduled task instead of an interactive skil
 - **Overlapping schedules** — multiple jobs firing at the same time can conflict on gbrain writes. Space them out (e.g., `0 9 * * 1` vs `0 10 * * 1`).
 - **Forgetting to sync** — editing config.yaml does NOT apply changes. You must run `sync.py`.
 - **Using enabled_toolsets too restrictively** — if the job needs gbrain MCP tools, omit enabled_toolsets entirely (gives full tool access) or include the right ones.
+- **Config.yaml vs cron state drift** — Jobs created via `cronjob(action='create')` directly are NOT reflected in config.yaml. Sync.py is ONE-DIRECTIONAL (config → state). If you create a cron job using the cronjob tool, you must manually add it to config.yaml afterward, or it will be invisible to sync.py and lost on the next deploy. Always check `grep "^- name:" /app/hermes_cron/config.yaml | wc -l` against `cronjob(action='list')` count to detect drift.
+- **Inconsistent YAML indentation** — All jobs must use `- name:` at column 0 (no leading spaces). A job with `  - name:` (leading spaces) won't match sync.py's matching logic and will appear as a separate orphan.
 
 ## Existing Cron Jobs
 
-| Job Name | Schedule | Description |
-|----------|----------|-------------|
-| `gbrain-contradictions` | Daily 9 AM | Scan for contradictory facts in gbrain |
-| `gbrain-doctor` | Mon 9 AM | Full brain health dashboard |
-| `gbrain-dream` | Nightly 2 AM | Autopilot maintenance (embed, backlinks, lint, purge) |
-| `gbrain-orphans` | Sat 9 AM | List orphan pages for Coy's review |
-| `gbrain-article-enrichment` | Sun 9 AM | Auto-enrich orphan articles by linking entities |
+| Job Name | Schedule | Description | Config Present? |
+|----------|----------|-------------|-----------------|
+| `gbrain-contradictions` | Daily 9 AM | Scan for contradictory facts in gbrain | ✅ |
+| `gbrain-doctor` | Mon 9 AM | Full brain health dashboard | ✅ |
+| `gbrain-dream` | Nightly 2 AM | Autopilot maintenance (embed, backlinks, lint, purge) | ✅ |
+| `gbrain-orphans` | Sat 9 AM | List orphan pages for review | ✅ |
+| `gbrain-article-enrichment` | Sun 9 AM | Auto-enrich orphan articles by linking entities | ❌ Created via cronjob tool — not in config.yaml |
+| `personalai-healthcheck` | Daily 6 AM | Full Personal AI health check (6 categories) | ✅ |
 
-All defined in `/app/hermes_cron/config.yaml`. Managed via sync.py.
+**Note:** `gbrain-article-enrichment` exists in Hermes cron state but was never added
+to config.yaml. To prevent drift, add it manually. All others are defined in
+`/app/hermes_cron/config.yaml` and managed via sync.py.
+
+## References
+
+See `references/cron-manifest.md` in this skill directory for a detailed
+snapshot of all current cron jobs, their schedules, delivery targets, and
+last-run status.

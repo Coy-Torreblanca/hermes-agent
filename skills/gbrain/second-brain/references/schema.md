@@ -191,7 +191,36 @@ is the highest-confidence signal in the system.
 
 ## Entity Identity & Deduplication (MANDATORY)
 
+### Slug Naming Convention (MANDATORY)
+
+**Rule: hyphens in all paths, never underscores.**
+
+Wrong: `second_brain/2026-05-12-second-brain-crud`
+Right: `second-brain/crud-implementation-plan`
+
+| Slug Component | Separator | Example |
+|---------------|-----------|---------|
+| Directory name | hyphen | `people/`, `companies/`, `projects/`, `second-brain/` |
+| Entity name | hyphens for spaces | `jane-doe`, `acme-corp` |
+| Full path | hyphens throughout | `projects/personalai/second-brain/crud-implementation-plan` |
+
+**Date prefixes are only for meeting pages.** Never use `YYYY-MM-DD-` for
+entity, project, concept, or idea pages.
+
+| Page Type | Slug Pattern | Example |
+|-----------|-------------|---------|
+| Person | `people/first-last` | `people/jane-doe` |
+| Company | `companies/organization-name` | `companies/acme-corp` |
+| Project | `projects/project-name` | `projects/my-project` |
+| Concept | `concepts/concept-name` | `concepts/attention-is-all-you-need` |
+| Meeting | `meetings/YYYY-MM-DD-topic` | `meetings/2026-05-14-sprint-review` |
+| Idea | `ideas/topic-slug` | `ideas/coding-agent-marketplace` |
+| Writing | `originals/article-title` | `originals/software-2-0` |
+| Media | `media/title-of-content` | `media/lex-fridman-podcast-456` |
+| Sub-project | `projects/parent/sub-component` | `projects/personalai/second-brain/crud-implementation-plan` |
+
 ### Canonical slugs
+
 - People: `first-last` (lowercase, hyphens for spaces)
 - Organizations: `organization-name` (companies, churches, nonprofits, schools)
 - Disambiguation: `david-liu-crustdata`, `david-liu-meta`
@@ -200,6 +229,7 @@ The filename IS the identity. All references, cross-links, and .raw/ sidecars
 use this slug.
 
 ### Aliases
+
 People have many names across sources. Frontmatter `aliases` captures all:
 
 ```yaml
