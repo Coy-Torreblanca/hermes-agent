@@ -85,10 +85,28 @@ def infer_tags(params: dict) -> str:
     return ''
 
 
+def format_branch_name(type_name: str, title: str) -> str:
+    """Convert type and title into a git-friendly branch name.
+    Matches Emacs my/format-branch-name from common-org-config.el.
+    Examples: feature/add-login-page, bugfix/fix-null-pointer
+    """
+    type_str = type_name.lower().strip() if type_name else 'feature'
+    title_str = title.lower().strip() if title else ''
+    # Replace non-alphanumeric characters with hyphens
+    slugged = re.sub(r'[^a-z0-9]+', '-', title_str)
+    # Clean up double hyphens
+    cleaned = re.sub(r'-+', '-', slugged)
+    # Trim leading/trailing hyphens
+    trimmed = cleaned.strip('-')
+    if not trimmed:
+        trimmed = 'new-task'
+    return f'{type_str}/{trimmed}'
+
+
 def make_deterministic_block(params: dict, stars_override: str = None) -> tuple:
     """
     Generate a deterministic org-mode block with fixed property order.
-    Property order: ID → CREATED → SPRINT → POINTS → VALUE → GOAL
+    Property order: ID → CREATED → SPRINT → POINTS → VALUE → GOAL → TYPE → BRANCH → REPO
 
     stars_override: if provided, use this for the heading stars instead of
     auto-detecting from destination. Inbox uses '*' (level 1, matching Emacs
@@ -122,6 +140,18 @@ def make_deterministic_block(params: dict, stars_override: str = None) -> tuple:
     # lines 295-296). Quick inbox and task capture never set it.
     resolved_goal = params.get('goal')
 
+    # Resolve TYPE, BRANCH, REPO — code change properties.
+    # Matches Emacs capture template "d: Dev: Code Change" (common-org-config.el lines 190-205)
+    # and refile metadata prompt (lines 274-281).
+    # TYPE: feature, bugfix, hotfix, or chore
+    # BRANCH: auto-generated from TYPE + title when TYPE is provided
+    # REPO: optional repo link
+    resolved_type = params.get('type')
+    resolved_repo = params.get('repo')
+    resolved_branch = params.get('branch')
+    if resolved_type and not resolved_branch:
+        resolved_branch = format_branch_name(resolved_type, title)
+
     # Resolved params — never duplicate this derivation elsewhere
     resolved_params = {
         'title': title,
@@ -137,6 +167,9 @@ def make_deterministic_block(params: dict, stars_override: str = None) -> tuple:
         'value': resolved_value,
         'goal': resolved_goal,
         'points': params.get('points'),
+        'type': resolved_type,
+        'branch': resolved_branch,
+        'repo': resolved_repo,
     }
 
     # Build properties drawer — fixed order
@@ -156,6 +189,14 @@ def make_deterministic_block(params: dict, stars_override: str = None) -> tuple:
     # GOAL: only for non-inbox destinations
     if not is_inbox and resolved_goal:
         props.append(f':GOAL:     {resolved_goal}')
+
+    # TYPE/BRANCH/REPO: code change properties (non-inbox only)
+    if resolved_type:
+        props.append(f':TYPE:     {resolved_type}')
+        if resolved_branch:
+            props.append(f':BRANCH:   {resolved_branch}')
+    if resolved_repo:
+        props.append(f':REPO:     {resolved_repo}')
 
     # Build the block
     heading = f'{keyword}{priority_tag} {title}{tags_str}'
