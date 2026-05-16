@@ -66,6 +66,17 @@ When you receive a correction signal from the user or the signal detector, do no
 
 A pass that does nothing is a missed learning opportunity, not a neutral outcome.
 
+#### Preference Order (which action to take)
+
+When a signal fires, prefer the **earliest action that fits** — don't skip ahead to "create new" if a simpler update would work:
+
+1. **UPDATE A CURRENTLY-LOADED SKILL** — If you had a skill loaded via `skill_view()` and it covers the territory of the new learning, patch that one first. It was in play, so it's the right target.
+2. **UPDATE AN EXISTING UMBRELLA** — If no loaded skill fits but an existing class-level umbrella does (check via `skills_list` + `skill_view`), patch it. Add a subsection, a pitfall, or broaden a trigger.
+3. **ADD A SUPPORT FILE** under an existing umbrella — Add a `reference/`, `template/`, or `script/` file when the learning is a specific recipe, transcript, or reusable probe, not a workflow change. The umbrella's SKILL.md should gain a one-line pointer to the new file.
+4. **CREATE A NEW CLASS-LEVEL UMBRELLA** — Only when no existing skill covers the class. The name MUST be at the class level (not a PR number, error string, feature codename, or today's-session artifact). If the proposed name only makes sense for today's task, fall back to 1, 2, or 3.
+
+If you notice two existing skills that overlap, note it in your reply — the background curator handles consolidation at scale. Don't reorganize the library in a single session; just flag the overlap.
+
 There are two places a SKILL.md can live:
 
 1. **User-local:** `~/.hermes/skills/<maybe-category>/<name>/SKILL.md` — personal, not shared. Created via `skill_manage(action='create')`.
@@ -207,7 +218,11 @@ Pick the closest existing category. Don't invent new top-level categories casual
 
 9. **Skipping skill updates after a clean session.** "Nothing to save" is a real option but should NOT be the default. Every session produces at least one learning — a correction, a technique, a pitfall. Scan for it and capture it. A pass that does nothing is a missed learning opportunity.
 
-10. **Putting corrections in memory instead of SKILL.md.** When the user corrects your style, workflow, or approach, embed the lesson in the skill body that governs that task class. Memory captures who the user is; skills capture how to work for this user. If the correction is about how to do the task, it belongs in the skill.
+11. **Putting corrections in memory instead of SKILL.md.** When the user corrects your style, workflow, or approach, embed the lesson in the skill body that governs that task class. Memory captures who the user is; skills capture how to work for this user. If the correction is about how to do the task, it belongs in the skill.
+
+12. **Creating wrapper/shim scripts in a skill's `scripts/` directory.** If a tool lives at a canonical path outside the skill directory (e.g., `~/.hermes/scripts/`), reference it by that path directly in SKILL.md commands and test imports. Do NOT place a wrapper in `scripts/` that `exec()`s the canonical script — it's unnecessary indirection. The user will call it out as "another script we don't need." Tests should use `os.path.expanduser("~/.hermes/scripts/<tool>")` with an optional `ORG_QUERY_PATH`-style env override for CI. Discovery: CoyDiego, Discord #secondbrain, 2026-05-15.
+
+13. **Skipping MECE checks before creation.** Before spinning up a new umbrella skill, run a quick MECE check — check the category for overlapping skills, check on-disk for duplicate names in other categories. See `references/mecE-checklist.md` for a repeatable process.
 
 ## Verification Checklist
 

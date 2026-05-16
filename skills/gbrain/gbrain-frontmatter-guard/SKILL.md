@@ -1,7 +1,7 @@
 ---
 name: gbrain-frontmatter-guard
 description: "Validate and fix YAML frontmatter across gbrain pages. Ensures every page has correct type, title, tags, created date, and valid YAML syntax. System maintenance skill for brain integrity."
-version: 1.0.0
+version: 1.1.0
 author: Coy
 license: MIT
 metadata:
@@ -133,6 +133,8 @@ Report to the user:
 - No tabs in YAML (use spaces)
 - Values with colons must be quoted: `title: "My Title: Subtitle"`
 - Tags are lowercase, hyphenated: `[person, investor, ai]`
+- **Sources with `[[wikilinks]]` must be single-quoted** — `[[` is a YAML flow sequence indicator. `sources: [[page-a]], [[page-b]]` causes `frontmatter-yaml-parse`. Fix: `sources: '[[page-a]], [[page-b]]'`
+- **Values containing double quotes must be single-quoted** — `description: 'Triggers on "find subdomains", "check ssl"'` to avoid `frontmatter-nested-quotes`
 
 ### Type-Specific Requirements
 

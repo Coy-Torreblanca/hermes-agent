@@ -20,6 +20,7 @@ Dedicated skill for creating and updating gbrain pages. Every `mcp_gbrain_put_pa
 - You've collected information and need to persist it to the second brain
 - User corrected you about a person/company/fact — write immediately
 - Any operational skill (enrich, ingest, signal-detector) needs to write a page
+- **You discover canonical config data, schema values, design decisions, or compliance rules that skill files currently inline** — gbrain pages are the source of truth. Write the data to gbrain, then update the skill file to reference the gbrain slug. Do NOT leave config data duplicated in skill files. Discovered May 15, 2026: Emacs VALUE_ALL values, hierarchy rules, and orthogonality conventions were inlined in SKILL.md instead of stored in gbrain.
 
 ## Workflow
 
@@ -97,6 +98,7 @@ Back-linking is mandatory — see `second-brain/references/quality.md`.
 - **Writing above the line without updating timeline** → evidence lost
 - **Paraphrasing the user's words** → preserve exact phrasing. The language IS the insight.
 - **No back-links** → broken graph. Every entity mention must link back.
+- **Inlining config data in skill files instead of gbrain** — when a user correction involves config values, schema rules, or design decisions (e.g., "VALUE values should be X", "priority and VALUE are orthogonal"), the canonical data goes into a gbrain page. Skill and reference files point to gbrain slugs. Do NOT update the skill file with the values directly — update gbrain, then point from the skill. Discovered May 15, 2026.
 
 ## Verification Checklist
 

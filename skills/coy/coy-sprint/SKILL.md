@@ -1,14 +1,16 @@
 ---
 name: coy-sprint
-description: "Manage Coy's sprint system — work tasks, personal board, capacity checks, velocity tracking. Reads/writes tasks.org and personal.org."
+description: "Manage Coy's sprint system — work tasks, personal board, capacity checks, velocity tracking. Todo CRUD (create/read/update/cancel), inbox capture, sprint dashboard. Reads/writes tasks.org and personal.org. TRIGGER: load this skill whenever Coy says anything about todos, tasks, sprints, inbox, work items, or 'what do I have going on'."
 version: 1.0.0
 author: Hermes Agent
 metadata:
   hermes:
-    tags: [sprint, org-mode, task-management, velocity]
+    tags: [sprint, org-mode, task-management, velocity, todo, inbox, tasks]
 ---
 
 # Coy's Sprint Management System
+
+> **⚠️ SOURCE OF TRUTH: The Emacs configuration is authoritative.** Before modifying org files or relying on any value schema, check `/data/syncthing/Sync/org/emacs_config/` (see `references/emacs-config-reference.md`). The markdown files in `org/` (`task_workflow.md`, etc.) are derivative summaries and may be outdated or contradictory. The actual `.el` config files in `emacs_config/lisp/` define what Emacs does.
 
 Manage tasks in `/data/syncthing/Sync/org/work/tasks.org` following the Agent Management Protocol embedded in that file. This skill enforces all 10 non-negotiable rules.
 
@@ -25,6 +27,7 @@ This skill was consolidated from 5 narrow sub-skills (May 2026 curator pass). Th
 | Sprint planning + roll-over | `references/org-sprint-plan.md` | "sprint planning", "roll over sprint" |
 | Manage shopping list | `references/shopping-list.md` | "add to shopping list", "what's on my shopping list" |
 | Article → icebox stories + gbrain | `references/article-analysis-workflow.md` | "analyze this article", "create stories for this", "save this for later" |
+| Deferred concept → gbrain-only removal | `references/article-analysis-workflow.md` (P2 branch) | "interesting but too far out", "keep for later", "remove from org" |
 
 This skill retains: rules, context filtering, sabbath mode, accountability tracking, time awareness, consequence tracking, reminders vs todos distinction, conventions, and the parse_backlog.py script.
 
@@ -200,15 +203,20 @@ From `/data/syncthing/Sync/org/work/sprint_habits.org`:
 - **Daily Org Triage** — Clear inbox.org into tasks.org, ensure POINTS/VALUE on new tasks. SCHEDULED: daily (+1d/2d repeat).
 - **Bi-Weekly Sprint Cleanup & Planning** — Run `M-x my/org-end-of-sprint-cleanup`, pull new tasks from backlog into next sprint. SCHEDULED: every 2 weeks (+2w/21d).
 
-## Workflow Reference Files (MANDATORY — load before ANY org file operation)
+## Workflow Reference Files (MANDATORY — load via `skill_view()` before ANY org file operation)
 
-Coy's canonical process docs. **Read these files before creating, editing, moving, or deleting any task in tasks.org, inbox.org, or personal.org.** This applies to triage, sprint planning, story creation, state changes — everything.
+The skill's reference files are the canonical guides for Hermes org-mode operations. **Load these via `skill_view(name="coy-sprint", file_path="...")` before creating, editing, moving, or deleting any task in tasks.org, inbox.org, or personal.org.** Each reference adapts the Emacs workflow for Hermes agent execution.
 
-| File | Content |
-|------|---------|
-| `/data/syncthing/Sync/org/task_workflow.md` | Maker/Manager philosophy, capture templates, refile/linter, file structure |
-| `/data/syncthing/Sync/org/sprint_workflow.md` | Sprint lifecycle: capture → triage → planning → execution → cleanup |
-| `/data/syncthing/Sync/org/agenda_workflow.md` | Agenda Dashboard architecture, hotkeys, daily routine, config snippet |
+| Reference File | Content | Loads via |
+|----------------|---------|-----------|
+| `references/org-capture.md` | Maker/Manager capture templates, quick inbox format, deterministic property generation | `skill_view(name="coy-sprint", file_path="references/org-capture.md")` |
+| `references/org-triage.md` | Refile process, metadata enforcement, parent/hierarchy decisions, inbox cleanup | `skill_view(name="coy-sprint", file_path="references/org-triage.md")` |
+| `references/org-dashboard.md` | Now vs. Next architecture, sprint load, daily routine | `skill_view(name="coy-sprint", file_path="references/org-dashboard.md")` |
+| `references/org-sprint-plan.md` | Sprint planning, capacity check, velocity tracking, roll-over | `skill_view(name="coy-sprint", file_path="references/org-sprint-plan.md")` |
+| `references/org-state.md` | State machine transitions (TODO→NEXT→STARTED→DONE/CANCELLED) | `skill_view(name="coy-sprint", file_path="references/org-state.md")` |
+| `references/emacs-config-reference.md` | Canonical Emacs config values (points to gbrain) | `skill_view(name="coy-sprint", file_path="references/emacs-config-reference.md")` |
+
+**Canonical compliance references:** gbrain `sources/emacs-org-config` documents the full Emacs config structure. `concepts/org-mode-compliance-requirements` documents hierarchy rules (STORYs don't need EPICs, TODOs must have STORY parents) and auto-derivation conventions.
 
 **Canonical org files (edit these, not markdown mirrors):**
 - `/data/syncthing/Sync/org/work/tasks.org` — work tasks
@@ -255,7 +263,9 @@ Epic: EPIC (always backlog, no sprint state)
 
 ## Org Query Script (Canonical Parser)
 
-**🚨 ALWAYS use `org_query.py` instead of regex/grep/search_files for org file operations.** The script handles hierarchy, properties, whitespace quirks — all the edge cases that broke regex-based approaches. Path: `~/.hermes/scripts/org_query.py`
+**🚨 Canonical script at `~/.hermes/scripts/org_query.py`** — single source of truth. No copy in this skill directory (removed May 2026).
+
+**🚨 ALWAYS use `org_query.py` instead of regex/grep/search_files for org file operations.** The script handles hierarchy, properties, whitespace quirks — all the edge cases that broke regex-based approaches.
 
 ```
 # Dashboard (replaces manual read_file + parse)
@@ -271,7 +281,8 @@ python3 ~/.hermes/scripts/org_query.py /data/syncthing/Sync/org/work/tasks.org -
 # Find an EPIC by name (partial match)
 python3 ~/.hermes/scripts/org_query.py /data/syncthing/Sync/org/work/tasks.org --find-epic "30ai"
 
-# Sprint items
+# Sprint items (numeric sprint number or "backlog")
+python3 ~/.hermes/scripts/org_query.py /data/syncthing/Sync/org/work/tasks.org --sprint "backlog"
 python3 ~/.hermes/scripts/org_query.py /data/syncthing/Sync/org/work/tasks.org --sprint 4
 
 # List all EPICs
@@ -288,9 +299,92 @@ python3 ~/.hermes/scripts/org_query.py /data/syncthing/Sync/org/work/tasks.org -
 
 # Find a heading by title regex
 python3 ~/.hermes/scripts/org_query.py /data/syncthing/Sync/org/work/tasks.org --heading "Four-Stage RAG"
+
+# Deterministic todo generation (Phase 1 — LIVE, May 2026)
+# NOTE: --create-todo and --dry-run take NO filepath arg. The script auto-resolves
+# the destination (default: inbox.org) from the JSON params.
+python3 ~/.hermes/scripts/org_query.py \
+  --create-todo '{"title":"Set up xurl CLI","body":"Install at /data/.hermes/skills/social-media/xurl/"}'
+# Generates: UUID + CREATED + SPRINT=backlog, appends to inbox. Zero follow-up questions.
+
+# Show what would be written without mutating file
+python3 ~/.hermes/scripts/org_query.py \
+  --dry-run '{"title":"New Story","destination":"Personal AI v1","keyword":"STORY","points":3}'
+
+# Read back a specific line using raw file I/O (bypasses read_file dedup)
+python3 ~/.hermes/scripts/org_query.py /data/syncthing/Sync/org/inbox.org --verify-line 42
 ```
 
 ## Commands
+
+### Deterministic Create Todo (`--create-todo` API)
+
+**Script:** `~/.hermes/scripts/org_query.py` (also `~/.hermes/bin/org_query`)
+
+The primary write method for all new todos. Accepts JSON, generates a deterministic org-mode block, and writes it to the right file. NEVER asks follow-up questions about priority, project, or location.
+
+**Parameters (JSON object):**
+
+| Param | Type | Default | When Required |
+|-------|------|---------|---------------|
+| `title` | string | (required) | Always — extract from Coy's sentence |
+| `body` | string | "" | When Coy gave context — pass through verbatim |
+| `destination` | string | "inbox" | "inbox" for fast capture; EPIC name (e.g. "Personal AI v1") for direct insert |
+| `priority` | string | omitted | A, B, or C — only if Coy specified it |
+| `tags` | array | [] | e.g. `["bug","urgent"]` |
+| `points` | int | omitted | ONLY for non-inbox destinations (stories under EPICs) |
+| `value` | string | omitted | Only include if explicitly provided. Never auto-derive from priority — see gbrain `concepts/org-mode-compliance-requirements` for orthogonality rules. |
+| `sprint` | string | "backlog" | Override only if Coy explicitly says a sprint number |
+| `goal` | string | omitted | Only include if explicitly provided. See gbrain `concepts/org-mode-compliance-requirements` for triage-time rules. |
+| `keyword` | string | "TODO" | "TODO" for inbox, "STORY" for stories under EPICs |
+
+**Deterministic property order (fixed — never vary):**
+```
+:PROPERTIES:
+:ID:       <auto-gen UUID — 16 hex chars>
+:CREATED:  [2026-05-14 Thu]
+:SPRINT:   backlog
+:POINTS:   <only if non-inbox>
+:VALUE:    <only if non-inbox>
+:GOAL:     <only if non-inbox>
+:END:
+```
+
+**🚨 ALWAYS reference gbrain for canonical values before editing org files.** The gbrain pages `sources/emacs-org-config` and `concepts/org-mode-compliance-requirements` are the authoritative sources for VALUE schema, hierarchy rules, capture format, and orthogonality conventions. See `references/emacs-config-reference.md`.
+
+**Auto-generation rules:**
+- `ID`: `uuid.uuid4().hex[:16].upper()` — matches Emacs `org-id-get-create` format
+- `CREATED`: System date in `[YYYY-MM-DD Day]` format  
+- `POINTS`: Omitted for inbox capture (triage fills later)
+- `VALUE`: **Only included if user explicitly provides it.** See `references/emacs-config-reference.md` for canonical values and orthogonality rules.
+- `GOAL`: **Only included if user explicitly provides it.** See gbrain `concepts/org-mode-compliance-requirements` for auto-derivation rules.
+
+**Inbox vs EPIC behavior:**
+- **Inbox destination:** Appends to end of inbox.org. Zero-risk — no reads, no patching, no conflict with existing content. POINTS/VALUE/GOAL are omitted — those are triage concerns.
+- **EPIC destination:** Uses `--insert-point` anchor to find the correct line under the EPIC in tasks.org, then inserts via raw Python file I/O (NOT `patch` — avoids anchor ambiguity). Includes POINTS/VALUE/GOAL in the properties drawer.
+- **🚨 CRITICAL: EPIC destination does NOT remove from inbox.** After `--create-todo` with `destination: "<EPIC>"`, the item exists in BOTH places — tasks.org AND inbox.org. You MUST manually remove the source inbox entry as a separate step. Discovered May 15, 2026: Syncthing context, gbrain back-linking, and cronjob deterministic items were all inserted under Personal AI v1 but remained in inbox until manually cleaned.
+
+**Usage patterns:**
+```bash
+# Fast capture (title + body only) — most common pattern
+python3 ~/.hermes/scripts/org_query.py \
+  --create-todo '{"title":"Fix login bug","body":"Users getting 401 after password reset"}'
+
+# With priority and tags
+python3 ~/.hermes/scripts/org_query.py \
+  --create-todo '{"title":"Add rate limiting","priority":"A","tags":["security"]}'
+
+# Under an EPIC (pre-triaged, includes metadata)
+python3 ~/.hermes/scripts/org_query.py \
+  --create-todo '{"title":"Auth middleware","body":"JWT validation layer","destination":"Personal AI v1","keyword":"STORY","points":3,"value":"High"}'
+
+# Preview without writing
+python3 ~/.hermes/scripts/org_query.py \
+  --dry-run '{"title":"Refactor router","destination":"Personal AI v1","keyword":"STORY"}'
+
+# Post-write verification (raw read, bypasses read_file dedup)
+python3 ~/.hermes/scripts/org_query.py /data/syncthing/Sync/org/inbox.org --verify-line 10
+```
 
 ### Read state
 
@@ -366,14 +460,17 @@ Discovered May 7, 2026: hourly coach flagged "Confirm gbrain full sync ran succe
 
 ### Capture a todo to inbox
 
-**Before writing:** Read the workflow reference files — at minimum `task_workflow.md` and `inbox.md` (see Workflow Reference Files above). These are Coy's canonical process docs for how captures work.
+Maker-mode captures (quick dumps) go to inbox.org with deterministic properties:
+- `:ID:` — auto-generated UUID
+- `:CREATED:` — today's date
+- `:SPRINT:` — backlog
 
-Maker-mode captures (quick dumps) go to inbox.org as bare `** TODO` entries — no POINTS, VALUE, or SPRINT. Metadata is added later during refile.
+No POINTS, VALUE, GOAL in inbox mode. Those are added during triage.
 
-1. Read `/data/syncthing/Sync/org/inbox.org` to see current state
-2. Build the proposed `** TODO` block with full body text — exact org syntax
-3. **Present as a proposal, wait for confirmation** — never write without Coy's approval
-4. After approval, append to inbox.org
+1. **No reads** — don't read inbox.org first. This is capture, not review.
+2. **Build the block** — title + properties drawer (`:ID:`, `:CREATED:`, `:SPRINT: backlog` in that order) + body text
+3. **Append to inbox** — use `org_query.py --create-todo` (LIVE — see `~/.hermes/scripts/org_query.py`)
+4. **Confirm briefly** — "Done. Captured to inbox."
 
 **Todo body quality:** The body must contain enough context for Coy to understand the task during later triage (days or weeks out). For Hermes/skill-related todos: name the system (Hermes Agent), include the full skill path (e.g., `/data/.hermes/skills/social-media/xurl/`), and list concrete setup steps. A bare headline without body context is useless.
 
@@ -424,7 +521,7 @@ Present sprint status as:
 
 ### Triage inbox
 
-**Before triaging:** Read the workflow reference files in `/data/syncthing/Sync/org/` (see Workflow Reference Files above). These are Coy's canonical process docs — they describe the Maker/Manager pipeline and how triage should flow.
+**Before triaging:** Load the skill reference files via `skill_view(name="coy-sprint", file_path="references/org-triage.md")` and see `references/emacs-config-reference.md` for canonical values. These are the Hermes-adapted versions of Coy's Maker/Manager pipeline — they describe how triage should flow through the agent, not through Emacs.
 
 Daily inbox grooming is handled by `daily-briefing` skill (morning briefing). When manually triaging:
 
@@ -434,8 +531,9 @@ Daily inbox grooming is handled by `daily-briefing` skill (morning briefing). Wh
 4. **Present refile targets as actual org text** — the exact `* STORY` or `** TODO` block that would be written to the destination file, with all properties. Don't use summary tables; Coy wants to see the org syntax.
 5. **Present as a proposal, wait for confirmation** — never push without Coy's approval
 6. After approval, move items to destination file with full metadata. **Use the Python heredoc pattern** in `references/refile-script-pattern.md` — never use `read_file` → extract → write (causes line-number corruption).
-7. Clean up DONE items from inbox
-8. Present the resulting "Now vs. Next" dashboard
+7. **🚨 Clean up refiled items from inbox.** Items moved via `--create-todo destination:\"<EPIC>\"` are NOT automatically removed from inbox. After all refiles are done, do a final inbox pass: read inbox.org, identify refiled items by heading title match, and remove them. The inbox can accumulate stale refiled items if this step is skipped. Discovered May 15, 2026: after bulk refile via --create-todo with 3 EPIC destinations, all 3 source items remained in inbox until manual cleanup.
+8. Clean up DONE items from inbox
+9. Present the resulting "Now vs. Next" dashboard
 
 **Triage output format** — present as organized proposals with the actual org-mode text that would be written to the destination file:
 
@@ -543,10 +641,12 @@ When editing tasks.org:
   :ID:        UUID
   :SPRINT:    4
   :POINTS:    3
-  :VALUE:     Essential
+  :VALUE:     High
   :GOAL:      Description of done
   :END:
   ```
+
+- **:VALUE: property** uses only canonical values from Emacs `VALUE_ALL`: `Essential`, `Important`, `Nice-to-have`. Priority mapping: `[#A]`→Essential, `[#B]`→Important, `[#C]`→Nice-to-have. See `references/emacs-config-reference.md` and gbrain `sources/emacs-org-config`.
 
 - **State changes** use org-mode logbook format:
   ```
@@ -579,11 +679,26 @@ When creating a todo for setting up a Hermes skill or tool:
 | 13 | 21-34 | Major initiative |
 | 21 | 34-55 | Epic |
 
+## testing suite
+
+A comprehensive test suite lives at `scripts/tests/` with **76 tests**:
+
+```bash
+./scripts/tests/run_tests.sh
+```
+
+Covers: org_query.py (unit + CLI integration), parse_backlog.py. Run before any deployment that modifies these scripts. See `scripts/tests/README.md`.
+
 ## Pitfalls
 
+- **🚨 Canonical VALUE values**: From gbrain `sources/emacs-org-config` → `common-org-config.el` line 226: `Essential, Important, Nice-to-have`. The refile linter prompts with these. `parse_backlog.py` sort order uses these as primary, with Critical/High/Medium/Low as legacy fallbacks. See `references/emacs-config-reference.md`.
+- **🚨 VALUE and priority are orthogonal** — gbrain `concepts/org-mode-compliance-requirements` documents this. `--create-todo` no longer auto-derives VALUE from priority. Only include `:VALUE:` if user explicitly provides it. Same for GOAL. The old `value_from_priority` function exists as utility but is NOT called by `--create-todo`.
+- **🚨 Coy can override the no-auto-derive rule for GOAL** — When Coy says "infer the goal" or "you can figure it out," he's explicitly overriding the orthogonality rule. DO auto-derive GOAL from title + context. The default is "only include if explicitly provided"; Coy's override supersedes it. Discovered May 15, 2026.
+
 - **🚨 USE org_query.py, NOT regex/grep/search_files for ALL org file queries.** `search_files` regex breaks on org property whitespace (`\\s` shorthand doesn't match `:SPRINT:   4`). `grep 'SPRINT: 4'` silently fails on variable property spacing. `read_file` line-number prefixes corrupt bulk moves. The parser at `~/.hermes/scripts/org_query.py` handles hierarchy, properties, inheritance, and whitespace correctly. **Before any org operation: run the appropriate org_query.py command.** Built May 10, 2026 after repeated regex failures caused story placement errors and silent search misses.
-- **🚨 `hermes_tools.read_file()` has session-level dedup — re-reading a file returns stale "unchanged" message**: When you `read_file` a file earlier in a conversation session, calling `read_file` on the same path again returns `"File unchanged since last read"` with the earlier content cached in `message`, NOT the current file content. The actual content key is empty/missing. This means you cannot verify a file was modified correctly by re-reading it with `read_file`. **Fix:** Use raw `open()` in `execute_code` to bypass dedup when you need a fresh read (e.g., after writing changes). Discovered May 12, 2026: moved a TODO from inbox.org to tasks.org then tried to verify with `read_file` — got "unchanged" message with stale content. `open().read()` returned the actual post-move state.
-- **🚨 CRITICAL — verify parent EPIC before inserting a `** STORY` with `patch`**: `patch` inserts at the nearest matching `old_string` anchor, which is often text under the LAST CHILD of an EPIC — but that text may be followed by top-level `* STORY` items before the next `* EPIC`. If you insert `** STORY` after a top-level `* STORY`, org-mode interprets the new story as a child of that top-level story, NOT the intended EPIC. **FIX:** Use `org_query.py --insert-point "<EPIC name>"` to get the correct insertion line and level. Then find a unique anchor string near that line that is verifiably under the target EPIC (run `org_query.py --find-epic` to trace). Hit twice May 10, 2026 — Bible stories and Hermes story both required remove-then-reinsert cycles.
+- **🚨 `hermes_tools.read_file()` has session-level dedup — re-reading a file returns stale "unchanged" message**: When you `read_file` a file earlier in a conversation session, calling `read_file` on the same path again returns `"File unchanged since last read"` with the earlier content cached in `message`, NOT the current file content. The actual content key is empty/missing. This means you cannot verify a file was modified correctly by re-reading it with `read_file`. **Fix:** Use `org_query.py <file> --verify-line N` to read back a specific line via raw `open()`. Or use `open()` directly in `execute_code` to bypass dedup when you need a fresh read (e.g., after writing changes). Discovered May 12, 2026: moved a TODO from inbox.org to tasks.org then tried to verify with `read_file` — got "unchanged" message with stale content. `open().read()` returned the actual post-move state.
+- **CRITICAL — regex alternation order**: When modifying the heading regex in `org_query.py`, compound keywords (`STORY-STARTED`, `STORY-NEXT`, `STORY-DONE`, `STORY-WAITING`) MUST appear before their base form (`STORY`). Regex alternation matches the first alternative — `STORY` before `STORY-STARTED` causes `-STARTED` to leak into the title. Fixed May 15, 2026 via test suite.
+- **🚨 CRITICAL — verify parent EPIC before inserting a `** STORY` with `patch`**: `patch` inserts at the nearest matching `old_string` anchor, which is often text under the LAST CHILD of an EPIC — but that text may be followed by top-level `* STORY` items before the next `* EPIC`. If you insert `** STORY` after a top-level `* STORY`, org-mode interprets the new story as a child of that top-level story, NOT the intended EPIC. **FIX:** Use `org_query.py --insert-point \"<EPIC name>\"` to get the correct insertion line and level. Then find a unique anchor string near that line that is verifiably under the target EPIC (run `org_query.py --find-epic` to trace). Hit twice May 10, 2026 — Bible stories and Hermes story both required remove-then-reinsert cycles.
 
 - **Searching for active tasks in org files:** `search_files` with regex patterns like `^\*+\s+(STARTED|NEXT|STORY-STARTED|STORY-NEXT)` will miss tasks indented under an EPIC (e.g., `** STORY-STARTED` has leading whitespace, not anchored at column 0). Use a broader pattern that accounts for indentation: search for the literal string `STORY-STARTED` or `STARTED` without anchoring to line start. Then `read_file` the surrounding lines to confirm. A zero-result search doesn't mean "nothing active" — it may mean "regex was too strict."
 - Don't add :VALUE: or :SPRINT: to TODO-level tasks (they inherit from parent STORY)
@@ -604,7 +719,7 @@ When creating a todo for setting up a Hermes skill or tool:
 - **CRITICAL — org-mode task state search**: `search_files` regex patterns like `^\*+\s+(STARTED|NEXT|STORY-STARTED)` can silently fail to match `** STORY-STARTED` headings (the `^\*+` anchor is unreliable across file read modes and regex flavors). **SAFER APPROACH**: search for the raw keyword (e.g., just `STARTED`) and then `read_file` around matches to identify active tasks. Or use a minimal pattern: `STORY-STARTED|STORY-NEXT`. Never trust an empty result from a complex anchored regex — when in doubt, fall back to keyword search. Discovered May 4, 2026: user asked "check on what I am working on now" and the anchored search returned 0 results despite `** STORY-STARTED` existing at line 1064. User had to correct the assistant.
 - **search_files `\s` shorthand doesn't work for org property values**: `search_files` with patterns like `SPRINT:\s+4` returned 0 results despite `:SPRINT:   4` existing in the file (May 10, 2026). The `\s` shorthand and complex character classes may not be supported. **SAFER APPROACH**: Use `grep` directly via terminal. **⚠️ grep literal pitfall**: `grep 'SPRINT: 4'` (single space) silently fails on org files because properties use variable spacing (`:SPRINT:   4` with 3+ spaces). Fixes that work: search for just the property key with `grep 'SPRINT:'` and parse the value column manually, or match variable whitespace with `grep -P 'SPRINT:\s+4'` (PCRE) or `grep 'SPRINT: *4'` (basic regex). Discovered May 10, 2026: hourly coach cron ran `grep 'SPRINT: 4'` which returned exit 1 (no match) despite multiple `:SPRINT:   4` lines existing in the file. Also note: `search_files` paginates/truncates results (shows ~50 per call with offset param); large org files with many properties drawers may need multiple offset calls to get a complete picture.
 - **🚨 CRITICAL — `search_files` `target: "content"` silently misses plain-text matches in org files**: Multiple searches for ordinary words like `dad`, `airplane`, `flight`, `cbx`, `uber` returned 0 results despite those words appearing multiple times in personal.org body text. `grep` via terminal found them immediately. This is not a regex issue — it's a tool reliability issue. **FIX**: When `search_files` returns 0 results for content that should plausibly exist, immediately fall back to `grep -n -i 'word1\|word2\|word3' <file>` via terminal. Discovered May 11, 2026: two consecutive search_files calls missed "dad" at 4 different lines in personal.org; grep caught all of them.
-- **CRITICAL — Coy's inbox triage has documented workflows**: Before performing inbox triage, read the markdown files in `/data/syncthing/Sync/org/` — specifically `task_workflow.md`, `sprint_workflow.md`, `agenda_workflow.md`, and `inbox.md`. These are the canonical process documents Coy wrote for his Maker/Manager pipeline. The coy-sprint skill is a simplified model; the org markdown files are the source of truth for triage format and workflow sequencing. Discovered May 5: assistant performed a flat triage without consulting these files; user redirected: "There should be mark down files in my org directory which tell you how this works."
+- **CRITICAL — Coy's inbox triage has documented workflows**: Before performing inbox triage, load `references/org-triage.md` via `skill_view()`. That reference file is the Hermes-adapted version of the Maker/Manager pipeline. See also `references/emacs-config-reference.md` for canonical value conventions. The coy-sprint skill contains the operational knowledge; the reference files provide the detail. Discovered May 5: assistant performed a flat triage without consulting these files; user redirected: "There should be mark down files in my org directory which tell you how this work" — those are the Emacs source docs, but the skill references are the Hermes-facing versions.
 - **Place items under existing EPICs**: When refiling inbox items that belong to an existing project (e.g., 30ai items), find the appropriate EPIC in tasks.org and add them as `** STORY` children under it. Do NOT create top-level STORYs when a parent EPIC exists. Discovered May 5: items 1-4 were proposed as top-level STORYs; Coy said "1-4 are 30ai items they should probably go under and existing epic."
 - **CRITICAL — read_file content extraction carries line number prefixes**: `read_file` returns lines in `LINE_NUM|CONTENT` format. When extracting text from one file to insert into another, you MUST strip the `NNN|` prefix from every line before writing. Writing read_file output directly into a destination file embeds those prefixes as literal content, corrupting the org file. Discovered May 5: extracting STORY blocks from inbox.org and writing to tasks.org embedded `53|`, `54|`, etc. throughout. Fix: post-process extracted lines with `re.sub(r'^\s*\d+\|', '', line)` or parse with a regex that captures only the content after the `|` separator. Always verify the destination file after a bulk move by reading the tail and checking for line-number artifacts.
 - **Phantom infrastructure assumptions**: When reviewing stories in an EPIC, scan ALL acceptance criteria and GOAL lines for infrastructure that doesn't exist yet. Stories often inherit assumptions from the EPIC's original vision (e.g., "Next.js displays success" when there's no Next.js app, "UI upload" when testing is via curl). Flag these immediately — don't trust the written text. Discovered May 4: EPIC 30ai assumed a Next.js UI that didn't exist; user corrected acceptance criteria to use curl.
@@ -617,3 +732,9 @@ When creating a todo for setting up a Hermes skill or tool:
 - **Sprint capacity override**: Coy will sometimes explicitly blow the 16 pt cap for infrastructure-heavy sprints. When he does, note it and proceed — do not push back a second time. The override is valid for that sprint only; future sprints still respect the cap. Discovered May 10, 2026: Coy overrode cap for Sprint 4 to fit all 7 global infrastructure jobs.
 - **🚨 CRITICAL — verify parent EPIC before inserting a `** STORY` with `patch`**: `patch` inserts at the nearest matching `old_string` anchor, which is often text under the LAST CHILD of an EPIC — but that text may be followed by top-level `* STORY` items before the next `* EPIC`. If you insert `** STORY` after a top-level `* STORY`, org-mode interprets the new story as a child of that top-level story, NOT the intended EPIC. **FIX — three-step verification before every `patch` insert into tasks.org:** (1) Find your anchor string and confirm it's under the target EPIC by tracing backward with `sed -n '1,{ln}p' | tac | grep -m1 '^\\* EPIC'`. (2) Check for any top-level `* STORY` or `* EPIC` between the anchor and the target EPIC — if any exist, your anchor is in the wrong section. (3) Only proceed when the nearest ancestor `* EPIC` matches your target. **Reproduction:** Hit twice May 10, 2026 — Bible stories landed under Ci/CD pipeline `* STORY` (then re-inserted correctly at line 1197), Hermes story landed under "Add apple reminders" `* STORY` (then re-inserted correctly at line 440). Both required a remove-then-reinsert fix cycle. **Prefer inserting BEFORE the first top-level break after the EPIC's children**, not after the last child — the top-level `*` heading is a safer anchor than trailing body text.
 - **Sprint capacity override — when Coy explicitly says "I'm canning X pts, proceed":** Do not re-litigate capacity. The 16pt cap is a guideline, and Coy can override it. When he states the override explicitly ("I'm canning a 32 point Sprint"), execute the changes without presenting capacity warnings, options, or tradeoffs. He's already decided. Discovered May 10, 2026: Agent presented 4 options when Coy had already made his decision; Coy said "I'm canning a 32 point Sprint this time around. Proceed." and expected immediate execution.
+
+- **🚨 Verify WHICH repo/target a fix addresses before creating a todo.** When Coy says "pin X to a specific commit" and there are multiple repos involved (Hermes Agent at `/opt/hermes-agent`, G-Brain at `/opt/gbrain`), confirm WHICH one he means before writing a todo. If you guess and get it wrong, the todo body describes the wrong system. Discovered May 15, 2026: created a todo to pin the Hermes Agent repo when Coy meant pin the G-Brain repo. Tactic: if two repos appear in the same Dockerfile, ask "which one?" or enumerate the options in your comprehension step before reaching for `--create-todo`.
+
+- **🚨 Reparenting existing org hierarchy requires raw Python file I/O.** Moving a STORY from under one parent to another (e.g., making a sibling into a child, or changing level from `****` to `*****`) cannot be done with `patch` — the anchor text is under the wrong hierarchy. Steps: (1) Read both files with `open()` to avoid `read_file` dedup. (2) Extract the block to move (heading + properties + body + children). (3) Adjust all indentation levels (+1 star for demotion, -1 star for promotion). (4) Remove original block from file. (5) Insert new block at the correct position under the new parent. (6) Verify with `org_query.py --children-of "New Parent"`. Discovered May 15, 2026: reparented BSB Translation Tables from `* EPIC Add BSB Bible` direct child to child of new `Add BSB to Bible site` STORY — required demoting `****` → `*****` for the STORY and `*****` → `******` for its children.
+
+- **🚨 Coy can override GOAL/VALUE auto-derivation rules.** The default rule says VALUE and GOAL are triage-only, never auto-derived. When Coy says "infer the goal" or "you can figure it out" — he's explicitly overriding that rule. DO auto-derive from title + context. When he says "high priority, high value" in the same sentence, he means `[#A]` priority and VALUE: Essential. Follow his explicit instruction over the default rule. Discovered May 15, 2026: Coy said "you can infer this goal" for Syncthing context item — he wanted me to derive the GOAL despite the "never auto-derive" rule.

@@ -18,7 +18,7 @@ with open(args.file) as f:
 
 items = []
 current_item = None
-value_order = {'Critical': 0, 'Essential': 1, 'Important': 1, 'High': 2, 'Medium': 3, 'Low': 4, 'Nice-to-have': 5}
+value_order = {'Essential': 0, 'Important': 1, 'Nice-to-have': 2, 'Critical': 0, 'High': 1, 'Medium': 2, 'Low': 3}
 
 for line in content.split('\n'):
     heading_match = re.match(r'^(\*+)\s+(STORY|EPIC|TODO)\s*(?:\[#(A|B|C)\]\s*)?(.+?)(?:\s+:[\w:]+:)?$', line)

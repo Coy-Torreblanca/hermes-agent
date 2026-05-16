@@ -1,7 +1,7 @@
 ---
 name: gbrain-maintain
 description: Active brain health maintenance — fix stale pages, connect orphans, detect dead links, trigger dream cycle, populate graph, audit citations. Complements the passive cron monitoring layer with interactive repair capabilities.
-version: 1.1.0
+version: 1.3.0
 author: Coy
 license: MIT
 metadata:
@@ -38,6 +38,7 @@ Interactive maintenance skill. The 5 Hermes cron jobs (`gbrain-contradictions`, 
 | Citation audit | ❌ Not covered | Check pages for uncited facts |
 | Friction logging | ❌ Not covered | Log issues for operator review |
 | CLI fallback cycle | ❌ Not covered | Run `gbrain embed --stale` + `check-backlinks fix` + `sync --skip-failed` via terminal |
+| Contradiction probe | Daily via cron (doctor surfaces findings) | On-demand probe run via CLI with custom queries |
 
 ## Step 0: Load Conventions
 
@@ -224,6 +225,75 @@ If `wiki/friction-log` doesn't exist, create it first (type: note, title: gbrain
 
 ---
 
+## Operation 10: Run Contradiction Probe
+
+**Trigger:** "run contradiction probe", "check for contradictions", "gbrain eval suspected-contradictions", "run the probe"
+
+The contradiction probe samples retrieval results and asks an LLM judge whether any pair contradicts on a factual claim. It is the interactive counterpart of the `gbrain-contradictions` cron job.
+
+### Prerequisites
+
+The probe requires one of:
+- `--queries-file FILE.jsonl` — each line: `{"query": "..."}`. **No default file exists** — you must create one or use an alternative.
+- `--query "..."` — single-query probe (quick but n=1 gives unactionably wide CI).
+- `--from-capture` — uses captured queries from prior searches (check with `gbrain eval export --since 7d`).
+
+If none exist, generate queries from the brain's content: list people pages via `mcp_gbrain_list_pages(type="person")`, project slugs, and domain concepts to build a representative set (aim for 15–50 queries).
+
+### Run the probe
+
+```bash
+cd /opt/gbrain && bun run src/cli.ts eval suspected-contradictions \
+  --queries-file /tmp/queries.jsonl \
+  --top-k 5 \
+  --budget-usd 1 \
+  --yes
+```
+
+Defaults (non-TTY): `--top-k 5`, `--judge anthropic:claude-haiku-4-5`, `--budget-usd $1`.
+
+### Check the trend
+
+```bash
+cd /opt/gbrain && bun run src/cli.ts eval suspected-contradictions trend --days 30
+```
+
+Each row is one probe run showing: date, model, query count, flags, and Wilson 95% CI.
+
+### Review high-severity findings
+
+```bash
+cd /opt/gbrain && bun run src/cli.ts eval suspected-contradictions review --severity high
+```
+
+### MCP surface (read-only, cached)
+
+```mcp_gbrain_find_contradictions(limit=50, severity="high")```
+
+This reads the **most recent probe run** — it does NOT trigger a new probe. Always use the CLI to run a fresh evaluation.
+
+### Interpreting results
+
+| Signal | Meaning |
+|--------|---------|
+| n < 30 | CI too wide to act on — run more queries |
+| Wilson CI lower bound < 5% | Existing mechanisms (source-boost, recency-decay) handle the load |
+| Wilson CI lower bound 5–15% | Real but bounded — operator decides |
+| Wilson CI lower bound > 15% | Real and substantial — plan the bigger swing |
+
+### Pitfalls
+
+- **MCP is read-only** — `mcp_gbrain_find_contradictions()` returns cached results. Use CLI to trigger a new probe.
+- **Cron job may already cover this** — the daily cron runs a probe and surfaces findings via `gbrain doctor`. Only run manually when investigating specific concerns or after large imports.
+- **Budget matters** — default $1 non-TTY caps at ~200 judge calls. For 50 queries × top-5 pairs, bump to $5.
+- **Cache is your friend** — re-runs with the same query set cost near-zero. Don't skip it.
+
+### See also
+
+- `references/contradiction-probe.md` — full command reference, severity rubric, cost model, resolution commands.
+
+---
+
 ## Common Pitfalls
 
 - **Doctor vs Health** — `mcp_gbrain_get_health()` gives the dashboard summary; `mcp_gbrain_run_doctor()` runs deeper checks. Use health for quick status, doctor for deep inspection.
@@ -236,10 +306,17 @@ If `wiki/friction-log` doesn't exist, create it first (type: note, title: gbrain
 - **Friction log is mandatory** — every maintenance session should leave at least one timeline entry (even if it's "no friction — all operations clean").
 - **Batch-connect where obvious** — concept/note pages clearly relating to a parent project can be proposed in a batch, not one at a time. Saves turns.
 - **Always add timeline entries with links** — linking an orphan page without adding a timeline entry to it is a missed opportunity to improve timeline coverage score.
+- **gbrain must be on PATH for migrations** — `apply-migrations` calls `gbrain init --migrate-only` as a subprocess. If `gbrain` isn't on $PATH, Phase A will fail silently. Fix: `ln -sf /opt/gbrain/src/cli.ts /usr/local/bin/gbrain` (the `#!/usr/bin/env bun` shebang handles execution).
+- **Migration v0.12.0 link extraction is slow** — scanning 1,145+ pages for wikilinks can take 60–300+ seconds. Set generous timeouts when running `apply-migrations --yes` for the first time on a populated brain. Subsequent runs are no-ops.
+- **Lint issue triage** — 95% of lint issues (`no-frontmatter`, `missing-type`, `missing-created`) are structural/benign on imported project docs (READMEs, RELEASE notes). Only ~5% are actionable. See `references/lint-remedies.md` for the full triage guide.
+- **`--fix` only handles code-fence-wrap and LLM preambles** — YAML parse errors, nested quotes, no-frontmatter, missing-type, and all other lint categories are NOT auto-fixable by `--fix`. Run `gbrain lint <file|dir> --fix` to clear the 1-2% fixable issues, then fix remaining actionable issues individually.
+- **Orphan rate is structurally normal** — when >80% of pages are auto-synced project docs with no wikilinks, 80%+ orphan rates are expected. Don't alarm the user; explain the composition.
 
 ## Reference Files
 
 - `references/cli-fallbacks.md` — Full gbrain CLI command reference, environment quirks, and non-interactive maintenance cycle for when Minions worker is down.
+- `references/lint-remedies.md` — Lint issue category triage: which issues are actionable vs structural/benign, with exact fix commands for each type.
+- `references/contradiction-probe.md` — Full command reference for `gbrain eval suspected-contradictions`: architecture, severity rubric, cost model, resolution commands, and output interpretation.
 
 ## Verification Checklist
 

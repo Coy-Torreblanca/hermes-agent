@@ -8,6 +8,19 @@ Pattern used May 10, 2026 with OncoAgent paper and HBR Agentic Marketing article
 - Coy wants to save an article "for later surfacing"
 - Any research paper, blog post, or strategy article worth capturing
 
+## Branch Decision
+
+After presenting analysis to Coy, **ask which path**:
+
+| Situation | Path | Action |
+|-----------|------|--------|
+| Coy has bandwidth, concept is actionable soon | **P1: Create Icebox Stories** | Create `** STORY` entries under relevant EPIC in tasks.org |
+| Concept is interesting but far off / no bandwidth / "keep for later" | **P2: Gbrain-Only Deferral** | Save to gbrain only, link to projects, tag `deferred`, remove from inbox entirely |
+
+**Discovered May 15, 2026:** Coy explicitly prefers gbrain-only deferral for concepts that are too far out to sprint. His words: "I have too much in org mode currently." The brain handles surfacing via query, anomaly detection, and project review workflow.
+
+For P2, skip Steps 3 (Create Icebox Stories) and 5 (Present summary table with EPICs) — proceed directly to Step 4 with enhanced linking.
+
 ## Workflow
 
 ### 1. Fetch & Extract
@@ -54,7 +67,7 @@ For each high-value transferable pattern:
 
 ### 4. Save to gbrain
 
-Create a page at `wiki/research/<slug>` with:
+**P1 path (icebox stories):** Create a page at `wiki/research/<slug>` with:
 - Full article citation (authors, date, source, URL)
 - Key concepts extracted
 - Application to Coy's projects (the mapping)
@@ -62,9 +75,23 @@ Create a page at `wiki/research/<slug>` with:
 - Tags: `transferable-patterns`, `research-paper` or `strategy-article`
 - Link to relevant gbrain project pages via `mcp_gbrain_add_link`
 
-### 5. Present Summary
+**P2 path (gbrain-only deferral):** Same gbrain page structure PLUS:
+- Add tag `deferred` to the research page via `mcp_gbrain_add_tag`
+- Add timeline entry noting the deferral decision and why (Coy's bandwidth, not priority)
+- Add `applies_to` links to EVERY project mentioned in the Application section — not just a subset. Use `mcp_gbrain_add_link(from=wiki/research/<slug>, to=<project_slug>, link_type="applies_to", context="<how it applies>")`
+- Ensure the complementary cross-link between paired articles (OncoAgent ↔ HBR as complements)
+- Write a concept page at `concepts/deferred-icebox-management` tracking the deferral pattern (first instance only)
+- Save to memory: the deferred items, tags, and surfacing mechanism
 
-Clean table: story name, points, parent EPIC. Confirmation that gbrain page is saved and linked.
+### 5. Present Summary & Clean Up
+
+**P1 path (icebox stories):** Present a clean table: story name, points, parent EPIC. Confirm gbrain page is saved and linked.
+
+**P2 path (gbrain-only deferral):** Present:
+- Confirm gbrain page is saved with all `applies_to` links
+- Confirm `deferred` tag added
+- Confirm timeline entry recorded
+- **Delete the corresponding `** STORY` entry from inbox.org** — the concept now lives in gbrain only. Coy explicitly prefers this: "I have too much in org mode currently." (May 15, 2026)
 
 ## Story Format Template
 

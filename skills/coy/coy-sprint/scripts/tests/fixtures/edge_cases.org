@@ -1,0 +1,70 @@
+#+TITLE: Edge Case Test File
+#+CATEGORY: test
+
+* EPIC Edge Case Epic 1
+:PROPERTIES:
+:ID:       EDGE001
+:CREATED:  [2026-01-01]
+:GOAL:     Test edge cases
+:END:
+
+** STORY-STARTED Active story 1
+:PROPERTIES:
+:ID:       EDGE002
+:SPRINT:   3
+:POINTS:   3
+:VALUE:    High
+:GOAL:     Test STARTED stories
+:END:
+
+** STORY-NEXT Active story 2
+:PROPERTIES:
+:ID:       EDGE003
+:SPRINT:   3
+:POINTS:   2
+:VALUE:    High
+:GOAL:     Test NEXT stories
+:END:
+
+** STORY No sprint property
+:PROPERTIES:
+:ID:       EDGE004
+:POINTS:   5
+:VALUE:    Medium
+:GOAL:     Test missing sprint
+:END:
+
+* EPIC Edge Case Epic 2
+:PROPERTIES:
+:ID:       EDGE005
+:CREATED:  [2026-02-01]
+:GOAL:     Test WIP violation
+:END:
+
+** STORY-STARTED Active story A
+:PROPERTIES:
+:ID:       EDGE006
+:SPRINT:   4
+:POINTS:   3
+:VALUE:    Critical
+:GOAL:     Test WIP violation (second STARTED)
+:END:
+
+** STORY-STARTED Active story B
+:PROPERTIES:
+:ID:       EDGE007
+:SPRINT:   4
+:POINTS:   5
+:VALUE:    Critical
+:GOAL:     Test WIP violation (third STARTED)
+:END:
+
+* EPIC Single Epic With No Children
+:PROPERTIES:
+:ID:       EDGE008
+:CREATED:  [2026-03-01]
+:SPRINT:   backlog
+:POINTS:   0
+:VALUE:    Low
+:GOAL:     Test empty EPIC insert point
+:END:

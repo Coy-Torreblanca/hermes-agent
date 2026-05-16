@@ -1,0 +1,158 @@
+#+TITLE: Test Tasks
+#+COLUMNS: %40ITEM %TODO %PRIORITY %POINTS{+} %SPRINT %TAGS %VALUE
+#+CATEGORY: work
+#+STARTUP: overview indent
+
+* EPIC [#A] Personal AI v1  :personal-ai:hermes:
+:PROPERTIES:
+:ID:       1000000000000001
+:CREATED:  [2026-05-09 Sat 05:00]
+:SPRINT:   4
+:POINTS:   83
+:VALUE:    Critical
+:GOAL:     Build a personalized AI assistant
+:END:
+
+Source: test fixture
+
+** STORY-STARTED [#A] Build ingestion pipeline
+:PROPERTIES:
+:ID:       2000000000000001
+:CREATED:  [2026-05-09 Sat 05:00]
+:SPRINT:   4
+:POINTS:   8
+:VALUE:    Critical
+:GOAL:     Centralize data from all services in gbrain
+:END:
+
+Pulling from all services. In progress.
+
+*** TODO Set up database schema
+:PROPERTIES:
+:ID:       3000000000000001
+:POINTS:   3
+:END:
+
+*** DONE Create API endpoints
+:PROPERTIES:
+:ID:       3000000000000002
+:POINTS:   2
+:END:
+
+- State "DONE" from "STARTED" [2026-05-14 Thu 18:43]
+
+** STORY-NEXT [#A] Build query layer
+:PROPERTIES:
+:ID:       2000000000000002
+:CREATED:  [2026-05-09 Sat 06:00]
+:SPRINT:   4
+:POINTS:   5
+:VALUE:    Critical
+:GOAL:     Fast semantic search across all data sources
+:END:
+
+Ready for development.
+
+** STORY [#A] Build notification system
+:PROPERTIES:
+:ID:       2000000000000003
+:CREATED:  [2026-05-09 Sat 07:00]
+:SPRINT:   4
+:POINTS:   3
+:VALUE:    High
+:GOAL:     Proactive alerts and reminders
+:END:
+
+** DONE [#A] Complete gap analysis
+:PROPERTIES:
+:ID:       2000000000000004
+:CREATED:  [2026-05-09 Sat 08:00]
+:SPRINT:   4
+:POINTS:   2
+:VALUE:    Critical
+:GOAL:     Review existing solutions
+:END:
+
+- State "DONE" from "STORY" [2026-05-12 Tue 18:03]
+
+* EPIC [#B] 30AI Document Pipeline  :30ai:rag:
+:PROPERTIES:
+:ID:       1000000000000002
+:CREATED:  [2026-04-15 Wed]
+:SPRINT:   backlog
+:POINTS:   21
+:VALUE:    High
+:GOAL:     Build document ingestion and RAG pipeline for 30ai
+:END:
+
+** STORY-NEXT Build PDF ingestion
+:PROPERTIES:
+:ID:       2000000000000005
+:CREATED:  [2026-04-15 Wed]
+:SPRINT:   backlog
+:POINTS:   5
+:VALUE:    High
+:GOAL:     Extract text from PDF documents
+:END:
+
+** STORY Build web crawler
+:PROPERTIES:
+:ID:       2000000000000006
+:CREATED:  [2026-04-15 Wed]
+:SPRINT:   backlog
+:POINTS:   3
+:VALUE:    Medium
+:GOAL:     Crawl and index web content
+:END:
+
+* STORY Orphan story without EPIC parent
+:PROPERTIES:
+:ID:       4000000000000001
+:CREATED:  [2026-05-01]
+:SPRINT:   4
+:POINTS:   3
+:VALUE:    Low
+:GOAL:     This should be flagged by validation
+:END:
+
+This is an orphan top-level STORY — not under any EPIC.
+
+* EPIC [#C] CI/CD Pipeline  :devops:
+:PROPERTIES:
+:ID:       1000000000000003
+:CREATED:  [2026-03-01]
+:SPRINT:   backlog
+:POINTS:   13
+:VALUE:    Essential
+:GOAL:     Automated deployment pipeline
+:END:
+
+** STORY-DONE [#A] Set up Docker builds
+:PROPERTIES:
+:ID:       2000000000000007
+:CREATED:  [2026-03-01]
+:SPRINT:   backlog
+:POINTS:   3
+:VALUE:    Critical
+:GOAL:     Automated Docker image builds
+:END:
+- State "DONE" from "STORY" [2026-04-10 Fri 14:00]
+
+** TODO [#B] Configure Kubernetes deployment
+:PROPERTIES:
+:ID:       2000000000000008
+:CREATED:  [2026-03-05]
+:SPRINT:   backlog
+:POINTS:   8
+:VALUE:    High
+:GOAL:     Deploy to Kubernetes cluster
+:END:
+
+* EPIC [ICEBOX] Future Ideas
+:PROPERTIES:
+:ID:       1000000000000004
+:CREATED:  [2026-05-01]
+:GOAL:     Ideas for future sprints
+:END:
+
+No children — empty EPIC for testing insert_point edge case.

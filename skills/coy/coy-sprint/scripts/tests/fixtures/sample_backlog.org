@@ -1,0 +1,58 @@
+#+TITLE: Test Backlog
+#+CATEGORY: work
+
+* EPIC Test Epic
+:PROPERTIES:
+:ID:       TESTBACKLOG001
+:CREATED:  [2026-05-01]
+:SPRINT:   backlog
+:GOAL:     Test backlog filtering
+:END:
+
+** STORY Critical item
+:PROPERTIES:
+:ID:       TEST002
+:CREATED:  [2026-05-01]
+:SPRINT:   backlog
+:POINTS:   3
+:VALUE:    Essential
+:GOAL:     Test critical priority
+:END:
+
+** STORY Low priority item
+:PROPERTIES:
+:ID:       TEST003
+:CREATED:  [2026-05-02]
+:SPRINT:   backlog
+:POINTS:   8
+:VALUE:    Nice-to-have
+:GOAL:     Test low priority
+:END:
+
+** STORY High priority with many points
+:PROPERTIES:
+:ID:       TEST004
+:CREATED:  [2026-05-03]
+:SPRINT:   backlog
+:POINTS:   13
+:VALUE:    Important
+:GOAL:     Test max-points filter
+:END:
+
+** STORY Sprint 4 item (should be excluded from backlog)
+:PROPERTIES:
+:ID:       TEST005
+:CREATED:  [2026-05-04]
+:SPRINT:   4
+:POINTS:   2
+:VALUE:    Important
+:GOAL:     Test sprint exclusion
+:END:
+
+** TODO No value item (should be excluded)
+:PROPERTIES:
+:ID:       TEST006
+:CREATED:  [2026-05-05]
+:SPRINT:   backlog
+:POINTS:   1
+:END:

@@ -40,6 +40,7 @@ Load this skill when:
 | "share this brain page", "export", "generate a summary" | Call `skill_view` with `name="gbrain-publish"` |
 | "show me the latest report", "run a report", "compare reports" | Call `skill_view` with `name="gbrain-reports"` |
 | "brain health", "maintenance", "fix citations", "audit sources", "check frontmatter", "fix metadata", "validate pages" | Call `skill_view` with `name="gbrain-maintain"` |
+| "review [project] goals", "overview of planned features", "what's planned for X" | Load the `coy-sprint` skill + `second-brain` and follow `references/project-review-workflow.md` |
 
 > **Note:** `gbrain-citation-fixer` and `gbrain-frontmatter-guard` are sub-operations dispatched by `gbrain-maintain`, not standalone entry points. The sub-ingest skills (`gbrain-idea-ingest`, `gbrain-media-ingest`, `gbrain-meeting-ingestion`, `gbrain-voice-note-ingest`) are dispatched by `gbrain-ingest`. `gbrain-article-enrichment` is a cron job reference doc, not an interactive skill.
 
@@ -59,4 +60,4 @@ Before writing page content, load the schema:
 
 Before finalizing page output, load the output rules:
 
-* Call `skill_view` with `name="second-brain"` and `file_path="references/_output-rules.md"`
+* Call `skill_view` with `name="second-brain"` and `file_path="references/project-review-workflow.md"` — when the user asks to review a project's goals, planned features, or todos. Combines brain knowledge with org task state.
