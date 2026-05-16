@@ -43,7 +43,8 @@ Key differences from task-with-properties captures (`C-c c t`):
 2. **Body context required** — bare headline without body is useless in triage.
 3. **Deterministic properties** — every capture includes `:ID:` (UUID), `:CREATED:` (today), `:SPRINT: backlog`. No POINTS, VALUE, or GOAL in inbox mode.
 4. **Don't read inbox.org first** — just append. This is capture, not review.
-5. **Fixed property order:** ID → CREATED → SPRINT. Every time. Never vary the order.
+5. **Fixed property order:** ID → CREATED → SPRINT → POINTS → VALUE → GOAL → TYPE → BRANCH → REPO. Every time. Never vary the order.
+6. **Code change properties (TYPE/BRANCH/REPO):** Only include when appropriate. TYPE auto-generates BRANCH as `type/slugged-title`. REPO is optional.
 
 ## Implementation
 
@@ -67,6 +68,15 @@ python3 /data/.hermes/scripts/org_query.py \
 # Preview without writing (dry-run)
 python3 /data/.hermes/scripts/org_query.py \
   --dry-run '{"title": "Refactor auth middleware", "body": "Extract JWT logic into separate module"}'
+
+# Code change story with TYPE/BRANCH/REPO (matches Emacs "d" template)
+python3 /data/.hermes/scripts/org_query.py \
+  --create-todo '{"title": "Add login page", "type": "feature", "repo": "github.com/Coy-Torreblanca/hermes-agent", "keyword": "STORY", "destination": "Personal AI v1", "points": 5}'
+# Auto-generates BRANCH: feature/add-login-page
+
+# Code change with explicit branch override
+python3 /data/.hermes/scripts/org_query.py \
+  --create-todo '{"title": "Fix auth bug", "type": "bugfix", "branch": "bugfix/auth-null-pointer", "repo": "github.com/org/repo", "keyword": "STORY"}'
 ```
 
 ### Fallback: `cat` heredoc append (when script unavailable)
@@ -94,6 +104,9 @@ No reads. No patching. Single atomic append to end of file. The `cat << 'EOF'` p
 - **VALUE**: NOT auto-derived from priority. Priorities and VALUE are orthogonal axes (different sort dimensions). VALUE is a triage-only property — include it in the block ONLY if the user explicitly provides it (e.g. `"value": "Essential"`). Emacs prompts for VALUE during refile on EPIC/STORY items, never during capture.
 - **GOAL**: NOT auto-derived from title. GOAL is a triage-only property — include ONLY if explicitly provided. Emacs prompts for GOAL during refile on EPIC/STORY items, never during capture.
 - **POINTS**: Omitted in inbox mode. Added during triage when refiled under an EPIC or STORY.
+- **TYPE**: Code change type — "feature", "bugfix", "hotfix", or "chore". Only include if explicitly provided. When set, auto-generates BRANCH.
+- **BRANCH**: Auto-generated as `type/slugged-title` when TYPE is provided (matches Emacs `my/format-branch-name`). Pass explicitly to override: `"branch": "bugfix/my-custom-name"`.
+- **REPO**: Optional repo link. Can be used with or without TYPE. Example: `"repo": "github.com/owner/repo"`.
 
 Canonical VALUE enum (from `common-org-config.el` line 226): `Essential`, `Important`, `Nice-to-have`. Legacy values (`Critical`, `High`, `Medium`, `Low`) also exist in older tasks but are not the canonical set.
 

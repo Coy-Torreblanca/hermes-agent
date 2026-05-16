@@ -110,23 +110,67 @@ Also report:
 
 ## Operation 3: Orphan Enrichment
 
-**Trigger:** "connect orphans", "enrich orphan pages", "fix orphan X"
+**Trigger:** "connect orphans", "enrich orphan pages", "fix orphan X", "surface orphans", "orphan report"
 
-1. Find orphans:
-   ```mcp_gbrain_find_orphans(include_pseudo=false)```
-   (CLI alternative: `bun run src/cli.ts orphans --json`)
-2. Present orphans sorted by recency — most recent first (they're the active content)
-3. For each orphan the user wants to connect:
-   a. Read the page: `mcp_gbrain_get_page(slug="<orphan>")`
-   b. Search for related pages: `mcp_gbrain_query(query="<page topic>")`
-   c. Propose links: "Connect `<orphan>` to `<target>`? They both reference `<shared topic>`."
-   d. Create links with user approval:
-      ```mcp_gbrain_add_link(from="<orphan>", to="<target>", link_type="references")```
-4. Log a friction entry if an orphan can't be connected (missing related pages → ingestion gap)
+### 3a. Find Orphans
+
+Primary — MCP tool:
+```mcp_gbrain_find_orphans(include_pseudo=false)```
+
+**⚠️ Truncation pitfall:** When the brain has many orphans (800+), the MCP tool result can exceed 190K chars and get truncated. The tool output includes top-level keys: `orphans` (array), `total_orphans`, `total_linkable`, `total_pages`, `excluded`. If you see a truncated response, fall back to CLI.
+
+CLI fallback (avoids truncation — `gbrain` is on PATH via `/usr/local/bin/gbrain`):
+```bash
+gbrain call find_orphans '{}' 2>&1 > /tmp/orphans.json
+```
+Then parse with Python:
+```python
+import json
+with open('/tmp/orphans.json') as f:
+    data = json.load(f)
+orphans = data['orphans']        # list of {slug, title}
+total = data['total_orphans']    # count
+total_pages = data['total_pages']
+total_linkable = data['total_linkable']
+```
+
+The `gbrain call` subcommand invokes any MCP tool directly and writes the raw JSON to stdout. Stderr has log messages (safe to redirect with `2>&1`). The JSON file can then be parsed without truncation.
+
+### 3b. Report Orphans
+
+Sort orphans by recency — most recent first (they're the active content). To get recency data:
+
+1. Fetch recently updated pages: `mcp_gbrain_list_pages(sort="updated_desc", limit=200)`
+2. Cross-reference orphan slugs against the returned pages to find the most recently updated ones
+3. Follow these reporting conventions:
+
+| Orphan count | Format |
+|-------------|--------|
+| **0** | Respond: "🎮 Zero orphan pages — brain graph is fully connected." |
+| **≤ 50** | List all orphans with their `type` and `updated_at` date |
+| **> 50** | Report count + breakdown by prefix + top 10 most recently updated orphans |
+
+When reporting >50, include:
+- Total orphans, linkable pages, connectivity rate (%)
+- Breakdown by prefix (e.g. `projects/`, `people/`, `brain/`, `concepts/`)
+- Top 10 most recently updated orphan pages with type and date
+- Notable root-level orphans (no prefix)
+
+**Structural ceiling note:** When >80% of pages are auto-synced project docs (imported markdown from repos with no wikilinks), orphan rates of 80%+ are expected and structurally normal. Explain this rather than alarming the user.
+
+### 3c. Connect Orphans
+
+For each orphan the user wants to connect:
+1. Read the page: `mcp_gbrain_get_page(slug="<orphan>")`
+2. Search for related pages: `mcp_gbrain_query(query="<page topic>")`
+3. Propose links: "Connect `<orphan>` to `<target>`? They both reference `<shared topic>`."
+4. Create links with user approval:
+   ```mcp_gbrain_add_link(from="<orphan>", to="<target>", link_type="references")```
+5. Log a friction entry if an orphan can't be connected (missing related pages → ingestion gap)
 
 ### Batch Approach (When Many Related Orphans)
 
-When you find orphans that are obviously related to a parent project or hub page, you can batch-connect them efficiently:
+When you find orphans that are obviously related to a parent project or hub page, batch-connect them:
 
 1. Read each orphan page to confirm relevance (parallel reads)
 2. Present the batch proposal: "These 5 concept pages all relate to projects/second-brain. OK to connect them all?"

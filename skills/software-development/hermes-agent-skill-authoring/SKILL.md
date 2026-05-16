@@ -185,7 +185,18 @@ Pick the closest existing category. Don't invent new top-level categories casual
    assert len(content) <= 100_000
    ```
 5. **Git add + commit** on the active branch.
-6. **Note:** the CURRENT session's skill loader is cached — `skill_view` / `skills_list` will not see the new skill until a new session. This is expected, not a bug.
+6. **🚨 Post-Creation Quality Gate 1: MECE Check.** After creating the skill, verify it doesn't overlap with existing skills:
+   - Run `skills_list(category="<target-category>")` or scan the category directory
+   - Compare descriptions and triggers of all peers in the same category
+   - If ANY peer would activate on the same user request → flag the overlap, either merge into the existing skill or sharpen the boundary
+   - Check for duplicate names across categories (e.g., same skill name in `coy/` and `research/`)
+   - Document the resolution: if no overlap, note "clean MECE." If overlap found, take action before declaring done.
+7. **🚨 Post-Creation Quality Gate 2: Modularity Check.** After creating the skill, test whether it can be split into multiple child skills:
+   - **Read the SKILL.md.** Does it cover multiple distinct task classes that each have their own triggers, workflow, and pitfalls? If a section could be its own `skill_view()` candidate → it's a candidate for splitting.
+   - **If multiple skills can be created from this parent:** split the deep-dive content into `references/*.md` or child skills. The SKILL.md should be the *index*, not the entire knowledge base.
+   - **If it's one coherent task class:** keep it as a single parent skill regardless of file size. A large but coherent skill (like `coy-sprint` at ~32k chars covering the complete sprint management system) is better than an arbitrary split into non-viable fragments.
+   - **Check the `references/` directory:** is it empty when it should have supporting docs? Does the SKILL.md inline content that belongs in reference files? Even a single-parent skill can benefit from moving reference material out of the SKILL.md body.
+8. **Note:** the CURRENT session's skill loader is cached — `skill_view` / `skills_list` will not see the new skill until a new session. This is expected, not a bug.
 
 ## Cross-Referencing Other Skills
 
@@ -222,7 +233,9 @@ Pick the closest existing category. Don't invent new top-level categories casual
 
 12. **Creating wrapper/shim scripts in a skill's `scripts/` directory.** If a tool lives at a canonical path outside the skill directory (e.g., `~/.hermes/scripts/`), reference it by that path directly in SKILL.md commands and test imports. Do NOT place a wrapper in `scripts/` that `exec()`s the canonical script — it's unnecessary indirection. The user will call it out as "another script we don't need." Tests should use `os.path.expanduser("~/.hermes/scripts/<tool>")` with an optional `ORG_QUERY_PATH`-style env override for CI. Discovery: CoyDiego, Discord #secondbrain, 2026-05-15.
 
-13. **Skipping MECE checks before creation.** Before spinning up a new umbrella skill, run a quick MECE check — check the category for overlapping skills, check on-disk for duplicate names in other categories. See `references/mecE-checklist.md` for a repeatable process.
+13. **Skipping MECE checks before AND after creation.** Before creating: run `references/mecE-checklist.md` to check for overlap. After creating: run the post-creation MECE gate (Workflow step 6) — verify the new skill doesn't overlap with existing peers and has clean trigger boundaries. Both checks are mandatory — the pre-check prevents duplication, the post-check catches what pre-check missed.
+
+14. **Creating a skill that covers multiple task classes without splitting it.** Don't use arbitrary character thresholds to decide when to split. Instead, ask: *does this SKILL.md cover multiple distinct task classes that each have their own triggers, workflow, and pitfalls?* If a section could be its own `skill_view()` candidate, it should be in a child skill or `references/*.md` file. A single-parent skill (like `coy-sprint` at ~32k) is fine if it's one coherent system — splitting it would produce non-viable fragments. But a multi-concern blob disguised as one skill is an anti-pattern: the SKILL.md should be the *index*, not the entire knowledge base. Move deep-dive content (recipe tables, error catalogs, verbose configuration examples) into `references/*.md` and replace inlined content with a one-line pointer.
 
 ## Verification Checklist
 
@@ -232,6 +245,8 @@ Pick the closest existing category. Don't invent new top-level categories casual
 - [ ] Name ≤ 64 chars, lowercase + hyphens
 - [ ] Description ≤ 1024 chars and starts with "Use when ..."
 - [ ] Total file ≤ 100,000 chars (aim for 8-15k)
+- [ ] **Modularity gate passed: SKILL.md covers one coherent task class (not multiple). If it covers multiple distinct classes, deep-dive content split into references/ or child skills.**
+- [ ] **MECE gate passed: no overlapping skills in same category, no duplicate names across categories, clean trigger boundaries documented.**
 - [ ] Structure: `# Title` → `## Overview` → `## When to Use` → body → `## Common Pitfalls` → `## Verification Checklist`
 - [ ] `related_skills` references resolve in-repo (or are explicitly OK to be user-local)
 - [ ] `git add skills/<category>/<name>/ && git commit` completed on the intended branch

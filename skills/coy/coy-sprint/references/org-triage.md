@@ -2,11 +2,29 @@
 
 The Manager half of Maker/Manager. Reads inbox.org, proposes destination + hierarchy + metadata for each item, then moves approved items to their permanent home. Mirrors what `C-c C-w` + the linter does in Emacs.
 
+## Before You Start: Batch Triage Is in a Dedicated Skill
+
+For **batch triage with auto-inference** (project detection, point estimation, context enrichment), use the dedicated skill instead of this reference file:
+
+```
+skill_view(name="coy-sprint-inbox-triage")
+```
+
+That skill implements all Phase 3 Inbox Intelligence features:
+- **Auto-project detection** — scores EPIC keywords, proposes best parent (or new EPIC if warranted)
+- **Auto-point estimation** — estimates hours → maps to canonical points table
+- **Context enrichment** — adds context where possible, asks where not
+- **Batch presentation** — all items in one proposal block
+- **Batch execution** — approved moves run in one pass with final inbox cleanup
+
+This reference file documents the base per-item workflow. The **inbox triage skill references this file** for its per-item foundation — it's the base layer, not the orchestrator. For daily triage, load the batch skill directly; use this reference only when you need to understand the underlying per-item logic.
+
 ## When to Use
 
 - Coy says "triage my inbox", "refile these", "clean up inbox"
 - After a capture burst — move items to permanent files
 - Daily grooming (morning briefing triggers this)
+- **Prefer loading `coy-sprint-inbox-triage` skill for batch operations**
 
 ## Process (per item)
 

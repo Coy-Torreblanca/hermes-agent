@@ -379,16 +379,22 @@ The primary write method for all new todos. Accepts JSON, generates a determinis
 | `sprint` | string | "backlog" | Override only if Coy explicitly says a sprint number |
 | `goal` | string | omitted | Only include if explicitly provided. See gbrain `concepts/org-mode-compliance-requirements` for triage-time rules. |
 | `keyword` | string | "TODO" | "TODO" for inbox, "STORY" for stories under EPICs |
+| `type` | string | None | Code change type: "feature", "bugfix", "hotfix", "chore". When set, auto-generates BRANCH. |
+| `repo` | string | None | Optional repo link (e.g. "github.com/owner/repo"). Can be used with or without TYPE. |
+| `branch` | string | None | Explicit branch override. Auto-generated as `type/slugged-title` if TYPE is given (matches Emacs `my/format-branch-name`). |
 
 **Deterministic property order (fixed — never vary):**
 ```
 :PROPERTIES:
 :ID:       <auto-gen UUID — 16 hex chars>
-:CREATED:  [2026-05-14 Thu]
+:CREATED:  [YYYY-MM-DD Day]
 :SPRINT:   backlog
 :POINTS:   <only if non-inbox>
 :VALUE:    <only if non-inbox>
 :GOAL:     <only if non-inbox>
+:TYPE:     <feature|bugfix|hotfix|chore — only if provided>
+:BRANCH:   <auto or explicit — only if TYPE provided>
+:REPO:     <optional — only if provided>
 :END:
 ```
 

@@ -7,8 +7,8 @@
 
 | Quirk | Detail |
 |-------|--------|
-| **Not on PATH** | Must run from `/opt/gbrain/` via `bun run src/cli.ts <command>` |
-| **`autopilot` needs binary** | `autopilot` subcommand expects a compiled binary on $PATH. `bun run src/cli.ts autopilot` will fail with "Could not resolve the gbrain CLI path." |
+| **Two gbrain entry points** | `gbrain` (the compiled binary) is on `$PATH` at `/usr/local/bin/gbrain` and supports `call`, `config`, `get`, `put`, `search`, `query`, etc. `bun run src/cli.ts` from `/opt/gbrain/` is the source-level runner. Prefer `gbrain` on PATH for simple queries; use `bun run src/cli.ts` for subcommands that aren't compiled into the binary (e.g., `embed`, `check-backlinks`, `sync`). |
+| **`autopilot` needs binary** | `autopilot` subcommand expects the compiled `gbrain` binary on $PATH. `bun run src/cli.ts autopilot` will fail with "Could not resolve the gbrain CLI path." |
 | **Embed needs API key** | `embed --all` requires `OPENAI_API_KEY` in the terminal environment. The MCP server has it, the terminal may not. If missing, all pages fail with "OpenAI embedding requires OPENAI_API_KEY." |
 | **No interactive prompts** | CLI commands are batch/scriptable but may produce verbose output. Pipe to `grep`, `head`, or redirect. |
 
@@ -54,13 +54,37 @@ cd /opt/gbrain && bun run src/cli.ts check-backlinks check
 
 ### List Orphans
 
+**⚠️ PRIMARY CLI (gbrain on PATH):**
+```bash
+gbrain call find_orphans '{}' 2>&1 > /tmp/orphans.json
+```
+- `gbrain` is on `$PATH` at `/usr/local/bin/gbrain` — no `cd` needed
+- The `call` subcommand invokes the `find_orphans` MCP tool and writes raw JSON to stdout
+- Stderr has non-fatal log messages like `[orphans.scan] start / done` — redirect with `2>&1`
+- **Avoids truncation:** The MCP tool response can exceed 190K chars on a large brain (800+ orphans). Saving to a file lets you parse fully via `python3 -c "import json; d=json.load(open('/tmp/orphans.json')); print(len(d['orphans']))"`
+- Output JSON structure (top-level keys): `orphans` (array of `{slug, title}`), `total_orphans`, `total_linkable`, `total_pages`, `excluded`
+
+**Alternative (compiled binary only, NOT via bun):**
 ```bash
 cd /opt/gbrain && bun run src/cli.ts orphans --json
 cd /opt/gbrain && bun run src/cli.ts orphans --count
 ```
-
 - `--json` — full list of orphan slugs and titles (can be huge — 800+ entries)
 - `--count` — just the number
+- ⚠️ This subcommand only exists in the compiled `gbrain` binary. If the local gbrain `bun run src/cli.ts` doesn't have it, use `gbrain call find_orphans` instead.
+
+### Get Recency Data for Orphans
+
+To sort orphans by most recently updated (for report formatting):
+1. Save orphans to a file (see above)
+2. Fetch recently updated pages via MCP:
+   ```mcp_gbrain_list_pages(sort="updated_desc", limit=200)
+   ```
+3. Cross-reference orphan slugs against the returned pages to find update timestamps
+4. Report format:
+   - **0 orphans:** "🎮 Zero orphan pages — brain graph is fully connected."
+   - **≤ 50 orphans:** List all with type + last-updated date
+   - **> 50 orphans:** Report count + breakdown by prefix + top 10 most recent
 
 ### Sync / Acknowledge Failures
 
