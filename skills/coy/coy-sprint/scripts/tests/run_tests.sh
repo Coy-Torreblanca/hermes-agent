@@ -66,6 +66,9 @@ run_test_file() {
 # org_query.py unit tests
 run_test_file "$TESTS_DIR/test_org_query.py" "org_query.py — Unit Tests" "-v"
 
+# habit_query.py tests
+run_test_file "$TESTS_DIR/test_habit_query.py" "habit_query.py — Habit Parser" "-v"
+
 # parse_backlog.py tests
 run_test_file "$TESTS_DIR/test_parse_backlog.py" "parse_backlog.py — Unit Tests" "-v"
 

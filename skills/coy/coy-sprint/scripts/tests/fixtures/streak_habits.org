@@ -1,0 +1,39 @@
+* TODO 🙏 Prepare for Bible study — read chapters + Bible Project videos
+  SCHEDULED: <2026-05-15 Fri +1w>
+  :PROPERTIES:
+  :STYLE:    habit
+  :END:
+
+  - State "DONE"       from "TODO"       [2026-05-15 Fri 08:00]
+  - State "DONE"       from "TODO"       [2026-05-14 Thu 08:00]
+  - State "DONE"       from "TODO"       [2026-05-13 Wed 08:00]
+  - State "DONE"       from "TODO"       [2026-05-12 Tue 08:00]
+  - State "DONE"       from "TODO"       [2026-05-10 Sun 08:00]
+
+  Read assigned chapters.
+
+* TODO 💸 Pay rent — reminder 2nd
+  SCHEDULED: <2026-06-02 Tue +1m>
+  :PROPERTIES:
+  :STYLE:    habit
+  :END:
+
+  - State "DONE"       from "TODO"       [2026-05-02 Sat 10:00]
+  - State "DONE"       from "TODO"       [2026-04-02 Thu 10:00]
+  - State "DONE"       from "TODO"       [2026-03-02 Mon 10:00]
+  - State "DONE"       from "TODO"       [2026-02-02 Mon 10:00]
+
+* TODO Daily exercise
+  SCHEDULED: <2026-05-15 Fri +1d>
+  :PROPERTIES:
+  :STYLE:    habit
+  :END:
+
+  - State "DONE"       from "TODO"       [2026-05-15 Fri 07:00]
+  - State "DONE"       from "TODO"       [2026-05-14 Thu 07:00]
+  - State "DONE"       from "TODO"       [2026-05-13 Wed 07:00]
+  - State "DONE"       from "TODO"       [2026-05-12 Tue 07:00]
+  - State "DONE"       from "TODO"       [2026-05-11 Mon 07:00]
+  - State "DONE"       from "TODO"       [2026-05-10 Sun 07:00]
+  - State "DONE"       from "TODO"       [2026-05-09 Sat 07:00]
+  - State "DONE"       from "TODO"       [2026-05-08 Fri 07:00]

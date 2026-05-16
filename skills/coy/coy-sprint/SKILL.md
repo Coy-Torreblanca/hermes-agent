@@ -321,6 +321,48 @@ python3 ~/.hermes/scripts/org_query.py /data/syncthing/Sync/org/inbox.org --veri
 
 **Script:** `~/.hermes/scripts/org_query.py` (also `~/.hermes/bin/org_query`)
 
+### Habits (`habit_query.py` — dedicated parser)
+
+**Script:** `~/.hermes/scripts/habit_query.py`
+
+Separate from org_query.py. Understands habit-specific syntax: SCHEDULED repeaters, STYLE markers, LOGBOOK state history, streak counting.
+
+```bash
+# List all habits with status and streak
+python3 ~/.hermes/scripts/habit_query.py --list
+
+# Show overdue habits
+python3 ~/.hermes/scripts/habit_query.py --overdue
+
+# Show habits due today
+python3 ~/.hermes/scripts/habit_query.py --due-today
+
+# Check streak for a habit
+python3 ~/.hermes/scripts/habit_query.py --streak "Bible study"
+
+# Mark a habit DONE for today
+python3 ~/.hermes/scripts/habit_query.py --toggle "Bible study"
+
+# Reschedule a habit — change SCHEDULED date (preserves repeater)
+python3 ~/.hermes/scripts/habit_query.py --reschedule "Bible study" 2026-06-01
+
+# Reschedule with new repeater too
+python3 ~/.hermes/scripts/habit_query.py --reschedule "Sprint Cleanup" 2026-05-30 ++2w/21d
+
+# Add a new habit
+python3 ~/.hermes/scripts/habit_query.py --add '{"title":"Morning Prayer","schedule":"+1d","body":"Daily morning prayer at 5 AM"}'
+```
+
+Defaults to `/data/syncthing/Sync/org/personal/habits.org`. Pass an alternate file as first arg:
+
+```bash
+python3 ~/.hermes/scripts/habit_query.py /data/syncthing/Sync/org/work/sprint_habits.org --list
+```
+
+**Testing note:** The habit test suite uses a dynamically-generated fixture for `sample_habits.org` — dates are computed relative to `date.today()` so they never go stale. See `references/test-fixture-staleness.md` for the pattern. `streak_habits.org` uses static historical dates (tests pass explicit `date()` args, safe from staleness).
+
+**Architecture decision:** `habit_query.py` is a dedicated parser — does NOT extend `org_query.py`. Habits have fundamentally different structure (SCHEDULED repeat syntax, inline LOGBOOK entries, STYLE markers) that don't fit the EPIC/STORY/TODO hierarchy. A separate parser keeps both scripts focused. See gbrain `concepts/habit-query-parser-decision`.
+
 The primary write method for all new todos. Accepts JSON, generates a deterministic org-mode block, and writes it to the right file. NEVER asks follow-up questions about priority, project, or location.
 
 **Parameters (JSON object):**
@@ -681,13 +723,34 @@ When creating a todo for setting up a Hermes skill or tool:
 
 ## testing suite
 
-A comprehensive test suite lives at `scripts/tests/` with **76 tests**:
+A comprehensive test suite lives at `scripts/tests/` with **128 tests** across 4 files:
 
 ```bash
 ./scripts/tests/run_tests.sh
 ```
 
-Covers: org_query.py (unit + CLI integration), parse_backlog.py. Run before any deployment that modifies these scripts. See `scripts/tests/README.md`.
+| Suite | Tests |
+|-------|-------|
+| `test_org_query.py` | 46 — core parsing, queries, validation, stats |
+| `test_habit_query.py` | 52 — habit parsing, streak, status, CLI, reschedule |
+| `test_parse_backlog.py` | 10 — backlog filtering, sort, filters |
+| `test_cli_integration.py` | 20 — end-to-end CLI for org_query |
+| **Total** | **128** |
+
+Run before any deployment that modifies these scripts. See `scripts/tests/README.md`.
+
+**Fixture staleness:** All date-dependent fixtures use `date.today()`-relative generation (see `references/test-fixture-staleness.md`). Never add static fixture dates that can go stale.
+
+## Answering Story-Specific Status Queries
+
+When the user asks "what's the status of X story" or names a specific org-mode story by title:
+
+- **Query the live org file**, not gbrain. Use `--children-of "Story Title"` to get the hierarchy, properties, and body context directly from the org file. The user wants to see the actual live state — sprint assignment, points, value, goal, and whether it's been started.
+- **Show the parent context too.** If it's under an EPIC, show which one. If it's on backlog vs. in the active sprint, call that out clearly.
+- **Include the body text and children.** The org file has the full scope definition. Don't summarize from gbrain — the user may have updated the file since the brain page.
+- Only fall back to the gbrain project page when the user asks about the project overall or past decisions. For current state, **live org file is canon.**
+
+Discovered May 15, 2026: CoyDiego asked about "TODO & Sprint Management" — I answered with the gbrain project overview, but he meant the specific `** STORY` child under the Personal AI v1 EPIC in the live tasks.org.
 
 ## Pitfalls
 
@@ -695,7 +758,10 @@ Covers: org_query.py (unit + CLI integration), parse_backlog.py. Run before any 
 - **🚨 VALUE and priority are orthogonal** — gbrain `concepts/org-mode-compliance-requirements` documents this. `--create-todo` no longer auto-derives VALUE from priority. Only include `:VALUE:` if user explicitly provides it. Same for GOAL. The old `value_from_priority` function exists as utility but is NOT called by `--create-todo`.
 - **🚨 Coy can override the no-auto-derive rule for GOAL** — When Coy says "infer the goal" or "you can figure it out," he's explicitly overriding the orthogonality rule. DO auto-derive GOAL from title + context. The default is "only include if explicitly provided"; Coy's override supersedes it. Discovered May 15, 2026.
 
-- **🚨 USE org_query.py, NOT regex/grep/search_files for ALL org file queries.** `search_files` regex breaks on org property whitespace (`\\s` shorthand doesn't match `:SPRINT:   4`). `grep 'SPRINT: 4'` silently fails on variable property spacing. `read_file` line-number prefixes corrupt bulk moves. The parser at `~/.hermes/scripts/org_query.py` handles hierarchy, properties, inheritance, and whitespace correctly. **Before any org operation: run the appropriate org_query.py command.** Built May 10, 2026 after repeated regex failures caused story placement errors and silent search misses.
+- **🚨 For habit state changes, use `habit_query.py` — NOT `patch`.** This covers both `--toggle` (mark DONE) and `--reschedule` (change SCHEDULED date). If you've already used `habit_query.py` to list/read habits in this session, you already have the right tool loaded. Do not default to `patch`. `habit_query.py [file] --toggle "Title"` handles LOGBOOK entries, SCHEDULED advancement, and LAST_REPEAT in one command. `habit_query.py [file] --reschedule "Title" YYYY-MM-DD` patches the SCHEDULED line in-place and optionally accepts a new repeater as a third arg. Discovered May 16, 2026: used `patch` to toggle Daily Org Triage despite having run `habit_query.py --list` and `--help` earlier in the same session.
+- **🚨 USE org_query.py, NOT regex/grep/search_files for ALL org file queries.** `search_files` regex breaks on org property whitespace (`\\\\s` shorthand doesn't match `:SPRINT:   4`). `grep 'SPRINT: 4'` silently fails on variable property spacing. `read_file` line-number prefixes corrupt bulk moves. The parser at `~/.hermes/scripts/org_query.py` handles hierarchy, properties, inheritance, and whitespace correctly. **Before any org operation: run the appropriate org_query.py command.** Built May 10, 2026 after repeated regex failures caused story placement errors and silent search misses.
+
+- **🚨 Shell-special characters in heading titles (`&`, `|`, `>`, `<`) break terminal commands.** When using `--heading`, `--children-of`, `--find-epic`, or any arg that contains `&` (e.g., `--heading "TODO & Sprint Management"`), the terminal interprets `&` as a background operator and the command returns `"Foreground command uses '&' backgrounding."` with no useful output. **FIX:** Use `execute_code` with Python subprocess, or pipe the title through `sed`/`tr` to strip the problematic character before passing to `org_query.py`. Even better: use the JSON-based commands that avoid shell parsing entirely. Discovered May 15, 2026.
 - **🚨 `hermes_tools.read_file()` has session-level dedup — re-reading a file returns stale "unchanged" message**: When you `read_file` a file earlier in a conversation session, calling `read_file` on the same path again returns `"File unchanged since last read"` with the earlier content cached in `message`, NOT the current file content. The actual content key is empty/missing. This means you cannot verify a file was modified correctly by re-reading it with `read_file`. **Fix:** Use `org_query.py <file> --verify-line N` to read back a specific line via raw `open()`. Or use `open()` directly in `execute_code` to bypass dedup when you need a fresh read (e.g., after writing changes). Discovered May 12, 2026: moved a TODO from inbox.org to tasks.org then tried to verify with `read_file` — got "unchanged" message with stale content. `open().read()` returned the actual post-move state.
 - **CRITICAL — regex alternation order**: When modifying the heading regex in `org_query.py`, compound keywords (`STORY-STARTED`, `STORY-NEXT`, `STORY-DONE`, `STORY-WAITING`) MUST appear before their base form (`STORY`). Regex alternation matches the first alternative — `STORY` before `STORY-STARTED` causes `-STARTED` to leak into the title. Fixed May 15, 2026 via test suite.
 - **🚨 CRITICAL — verify parent EPIC before inserting a `** STORY` with `patch`**: `patch` inserts at the nearest matching `old_string` anchor, which is often text under the LAST CHILD of an EPIC — but that text may be followed by top-level `* STORY` items before the next `* EPIC`. If you insert `** STORY` after a top-level `* STORY`, org-mode interprets the new story as a child of that top-level story, NOT the intended EPIC. **FIX:** Use `org_query.py --insert-point \"<EPIC name>\"` to get the correct insertion line and level. Then find a unique anchor string near that line that is verifiably under the target EPIC (run `org_query.py --find-epic` to trace). Hit twice May 10, 2026 — Bible stories and Hermes story both required remove-then-reinsert cycles.

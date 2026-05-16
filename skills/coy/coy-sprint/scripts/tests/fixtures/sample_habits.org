@@ -1,0 +1,42 @@
+* TODO 📖 Study Anglican liturgy before Sundays
+  SCHEDULED: <2026-07-18 Sat +1w>
+  :PROPERTIES:
+  :STYLE:    habit
+  :END:
+
+  Look up lectionary cycle. Read passages before Sunday service (9:15 AM
+  Christ the King) to make it more impactful. Saturday prep for Sunday liturgy.
+
+* TODO 🙏 Prepare for Bible study — read chapters + Bible Project videos
+  SCHEDULED: <2026-07-17 Fri +1w>
+  :PROPERTIES:
+  :STYLE:    habit
+  :END:
+
+  Read assigned chapters and watch Bible Project videos before each study
+  session.
+
+* TODO 💸 Pay rent — due 1st, reminder 2nd at 4 PM
+  SCHEDULED: <2026-08-02 Sat +1m>
+  :PROPERTIES:
+  :STYLE:    habit
+  :ID:       E463F6634B924F9EB9A95DA5749B767A
+  :END:
+
+  Rent is due on the 1st of each month.
+
+* STORY Execute Monthly Investment Strategy
+  SCHEDULED: <2026-08-01 Fri +1m>
+  :PROPERTIES:
+  :STYLE: habit
+  :LAST_REPEAT: [2026-04-18 Sat 04:45]
+  :END:
+
+  - State "DONE"       from "TODO"       [2026-04-18 Sat 04:45]
+  Deploy $4,166 from savings into the market via dollar-cost averaging.
+
+  ** Allocation Checklist:
+  - [ ] Transfer $4,166 from Savings to Brokerage
+  - [ ] Buy ~$1,388 of VGLT (33%)
+  - [ ] Buy ~$1,388 of VTEB (33%)
+  - [ ] Buy ~$1,388 of DIA (33%)
