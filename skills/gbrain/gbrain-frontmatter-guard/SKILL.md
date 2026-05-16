@@ -28,8 +28,8 @@ Validate and fix YAML frontmatter across gbrain pages. Ensures every page has co
 ### Step 1: Load Conventions
 
 ```
-skill_view(name="second-brain", file_path="references/schema.md")
-skill_view(name="second-brain", file_path="references/_output-rules.md")
+read_file /data/.hermes/skills/gbrain/second-brain/references/schema.md
+read_file /data/.hermes/skills/gbrain/second-brain/references/_output-rules.md
 ```
 
 ### Step 2: Choose Scan Target

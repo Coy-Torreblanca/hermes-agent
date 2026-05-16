@@ -237,6 +237,25 @@ Pick the closest existing category. Don't invent new top-level categories casual
 
 14. **Creating a skill that covers multiple task classes without splitting it.** Don't use arbitrary character thresholds to decide when to split. Instead, ask: *does this SKILL.md cover multiple distinct task classes that each have their own triggers, workflow, and pitfalls?* If a section could be its own `skill_view()` candidate, it should be in a child skill or `references/*.md` file. A single-parent skill (like `coy-sprint` at ~32k) is fine if it's one coherent system — splitting it would produce non-viable fragments. But a multi-concern blob disguised as one skill is an anti-pattern: the SKILL.md should be the *index*, not the entire knowledge base. Move deep-dive content (recipe tables, error catalogs, verbose configuration examples) into `references/*.md` and replace inlined content with a one-line pointer.
 
+15. **Using `skill_view(file_path=...)` to load reference files instead of `read_file` with an absolute path.** When a reference file lives under the skill's `references/` directory (e.g., `references/deep-dive.md`), load it with `read_file` and an absolute path — not `skill_view(file_path='references/deep-dive.md')`.
+
+    **Rationale:**
+    - **Prevents recursive cascade:** `skill_view(file_path=...)` triggers the full skill-loader pipeline, which can itself invoke other `skill_view()` calls, leading to cascading loads and hard-to-trace recursion.
+    - **Semantic clarity:** `read_file` signals *I need data from this file* (a read operation), while `skill_view` signals *I need the Hermes Agent skill system* (a meta-load operation). Using the wrong tool obscures intent.
+    - **No unnecessary metadata:** `skill_view` wraps the file content with skill frontmatter parsing, metadata extraction, and session registration — all of which are irrelevant for a plain reference document.
+
+    **Before (anti-pattern):**
+    ```python
+    content = skill_view(file_path='references/provider-quirks.md')
+    ```
+
+    **After (correct):**
+    ```python
+    content = read_file(path='/data/.hermes/skills/software-development/hermes-agent-skill-authoring/references/provider-quirks.md')
+    ```
+
+    The absolute path ensures the agent resolves the file correctly regardless of the current working directory.
+
 ## Verification Checklist
 
 - [ ] File is at `skills/<category>/<name>/SKILL.md` (not in `~/.hermes/skills/`)

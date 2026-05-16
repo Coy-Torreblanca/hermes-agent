@@ -39,9 +39,9 @@ Analyze the incoming content to determine type:
 ### Step 2: Load Conventions
 
 ```
-skill_view(name="second-brain", file_path="references/quality.md")
-skill_view(name="second-brain", file_path="references/_brain-filing-rules.md")
-skill_view(name="second-brain", file_path="references/_output-rules.md")
+read_file /data/.hermes/skills/gbrain/second-brain/references/quality.md
+read_file /data/.hermes/skills/gbrain/second-brain/references/_brain-filing-rules.md
+read_file /data/.hermes/skills/gbrain/second-brain/references/_output-rules.md
 ```
 
 ### Step 3: Dispatch to Sub-Skill

@@ -27,10 +27,10 @@ Process voice memos, dictations, and transcribed audio recordings into gbrain pa
 ### Step 1: Load Conventions
 
 ```
-skill_view(name="second-brain", file_path="references/quality.md")
-skill_view(name="second-brain", file_path="references/_brain-filing-rules.md")
-skill_view(name="second-brain", file_path="references/schema.md")
-skill_view(name="second-brain", file_path="references/_output-rules.md")
+read_file /data/.hermes/skills/gbrain/second-brain/references/quality.md
+read_file /data/.hermes/skills/gbrain/second-brain/references/_brain-filing-rules.md
+read_file /data/.hermes/skills/gbrain/second-brain/references/schema.md
+read_file /data/.hermes/skills/gbrain/second-brain/references/_output-rules.md
 ```
 
 ### Step 2: Determine Page Type

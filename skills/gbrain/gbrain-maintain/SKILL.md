@@ -45,14 +45,14 @@ Interactive maintenance skill. The 5 Hermes cron jobs (`gbrain-contradictions`, 
 Before any maintenance operation, load the quality rules and friction protocol:
 
 ```
-skill_view(name="second-brain", file_path="references/quality.md")
-skill_view(name="second-brain", file_path="references/_friction-protocol.md")
+read_file /data/.hermes/skills/gbrain/second-brain/references/quality.md
+read_file /data/.hermes/skills/gbrain/second-brain/references/_friction-protocol.md
 ```
 
 If Minions is suspected down also load the CLI fallback reference:
 
 ```
-skill_view(name="gbrain-maintain", file_path="references/cli-fallbacks.md")
+read_file /data/.hermes/skills/gbrain/gbrain-maintain/references/cli-fallbacks.md
 ```
 
 ---

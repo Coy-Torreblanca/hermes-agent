@@ -48,16 +48,16 @@ Load this skill when:
 
 Before writing any brain page, load the quality rules:
 
-* Call `skill_view` with `name="second-brain"` and `file_path="references/quality.md"`
+* Call `read_file` with `path="/data/.hermes/skills/gbrain/second-brain/references/quality.md"`
 
 Before filing content or creating a new page, load the filing rules:
 
-* Call `skill_view` with `name="second-brain"` and `file_path="references/_brain-filing-rules.md"`
+* Call `read_file` with `path="/data/.hermes/skills/gbrain/second-brain/references/_brain-filing-rules.md"`
 
 Before writing page content, load the schema:
 
-* Call `skill_view` with `name="second-brain"` and `file_path="references/schema.md"`
+* Call `read_file` with `path="/data/.hermes/skills/gbrain/second-brain/references/schema.md"`
 
 Before finalizing page output, load the output rules:
 
-* Call `skill_view` with `name="second-brain"` and `file_path="references/project-review-workflow.md"` — when the user asks to review a project's goals, planned features, or todos. Combines brain knowledge with org task state.
+* Call `read_file` with `path="/data/.hermes/skills/gbrain/second-brain/references/project-review-workflow.md"` — when the user asks to review a project's goals, planned features, or todos. Combines brain knowledge with org task state.

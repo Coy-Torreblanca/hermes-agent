@@ -28,12 +28,13 @@ Follow these steps in exact order when writing ANY brain page:
 
 ### Step 1: Load Conventions
 
-Call `skill_view` with `name="second-brain"` and `file_path="references/quality.md"`.
-Call `skill_view` with `name="second-brain"` and `file_path="references/_brain-filing-rules.md"`.
-Call `skill_view` with `name="second-brain"` and `file_path="references/schema.md"`.
-Call `skill_view` with `name="second-brain"` and `file_path="references/_output-rules.md"`.
+Call `read_file` with each convention reference:
+- `read_file /data/.hermes/skills/gbrain/second-brain/references/quality.md`
+- `read_file /data/.hermes/skills/gbrain/second-brain/references/_brain-filing-rules.md`
+- `read_file /data/.hermes/skills/gbrain/second-brain/references/schema.md`
+- `read_file /data/.hermes/skills/gbrain/second-brain/references/_output-rules.md`
 
-Wait for all conventions to load before proceeding.
+No need to `wait` — `read_file` is synchronous. All conventions are loaded before the next step.
 
 ### Step 2: Determine Slug
 
@@ -89,6 +90,14 @@ For every person/company mentioned in the page that has a brain page:
 `mcp_gbrain_add_link(from="<this_page>", to="<entity_page>", link_type="references")`
 
 Back-linking is mandatory — see `second-brain/references/quality.md`.
+
+### Step 9: Preserve Raw Source (Optional)
+
+If the page was created from an uploaded document, message file, or raw source artifact, preserve the original for provenance:
+
+`mcp_gbrain_file_upload(path="<file_path>", page_slug="<this_slug>")`
+
+**🚨 File upload path restriction:** `mcp_gbrain_file_upload` only accepts paths within the Hermes working directory (typically data repos, not `/tmp/` or cache dirs). If you saved a user's uploaded document to `/data/.hermes/cache/documents/`, that path will be rejected. **Fix:** Copy the file to a valid path under the working directory first (e.g. `/data/syncthing/Sync/org/` or repo root), then upload from there. Discovered 2026-05-16: tried to upload from `/data/.hermes/cache/documents/` and received `invalid_params` — upload path must be within the working directory.
 
 ## Common Pitfalls
 

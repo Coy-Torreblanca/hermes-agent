@@ -82,3 +82,10 @@ Every ingested item should have its raw source preserved for provenance.
 Use `mcp_gbrain_file_upload(path=..., page_slug=...)` to attach files to brain pages
 for provenance. This ensures any derived brain page can be traced back to its
 original source.
+
+**⚠️ Working directory restriction:** `mcp_gbrain_file_upload` only accepts paths
+within the Hermes working directory (typically repo roots like `/data/syncthing/Sync/`).
+Files in `/tmp/`, cache dirs, or `/data/.hermes/cache/` will be silently rejected
+with `invalid_params`. Copy the file to a valid path before uploading.
+
+Discovered 2026-05-16: attempted upload from `/data/.hermes/cache/documents/` failed.

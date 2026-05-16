@@ -27,8 +27,8 @@ Share brain pages as shareable summaries, extracts, or formatted outputs. Genera
 ### Step 1: Load Conventions
 
 ```
-skill_view(name="second-brain", file_path="references/quality.md")
-skill_view(name="second-brain", file_path="references/_output-rules.md")
+read_file /data/.hermes/skills/gbrain/second-brain/references/quality.md
+read_file /data/.hermes/skills/gbrain/second-brain/references/_output-rules.md
 ```
 
 ### Step 2: Identify Target Page

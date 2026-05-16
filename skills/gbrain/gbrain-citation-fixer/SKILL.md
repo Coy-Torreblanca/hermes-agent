@@ -27,8 +27,8 @@ Find and fix broken citations across gbrain pages. Scans for uncited claims, mal
 ### Step 1: Load Conventions
 
 ```
-skill_view(name="second-brain", file_path="references/quality.md")
-skill_view(name="second-brain", file_path="references/_output-rules.md")
+read_file /data/.hermes/skills/gbrain/second-brain/references/quality.md
+read_file /data/.hermes/skills/gbrain/second-brain/references/_output-rules.md
 ```
 
 ### Step 2: Identify Citation Issues

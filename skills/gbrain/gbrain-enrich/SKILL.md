@@ -30,11 +30,11 @@ Build and enrich person/company pages from organic sources: journal entries, con
 Before any enrich operation:
 
 ```
-skill_view(name="second-brain", file_path="references/quality.md")
-skill_view(name="second-brain", file_path="references/_brain-filing-rules.md")
-skill_view(name="second-brain", file_path="references/schema.md")
-skill_view(name="second-brain", file_path="references/_output-rules.md")
-skill_view(name="second-brain", file_path="references/repo-architecture.md")
+read_file /data/.hermes/skills/gbrain/second-brain/references/quality.md
+read_file /data/.hermes/skills/gbrain/second-brain/references/_brain-filing-rules.md
+read_file /data/.hermes/skills/gbrain/second-brain/references/schema.md
+read_file /data/.hermes/skills/gbrain/second-brain/references/_output-rules.md
+read_file /data/.hermes/skills/gbrain/second-brain/references/repo-architecture.md
 ```
 
 Wait for all conventions to load before proceeding.
