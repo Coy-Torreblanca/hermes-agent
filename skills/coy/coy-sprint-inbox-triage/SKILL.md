@@ -1,6 +1,6 @@
 ---
 name: coy-sprint-inbox-triage
-description: Batch inbox triage for Coy's sprint system — reads all inbox items, applies auto-project detection (EPIC scoring), auto-point estimation (hours→points table), context enrichment (ask if unsure), presents all proposals as one org-text block, executes approved moves in batch, and rotates daily habits. Phase 3 Inbox Intelligence.
+description: Batch inbox triage for Coy's sprint system — reads all inbox items, applies auto-project detection (EPIC scoring), auto-point estimation (hours→points table), context enrichment (ask if unsure), presents all proposals as one org-text block, executes approved moves in batch, and rotates org triage daily habit afterwards.
 version: 1.0.0
 author: Hermes Agent
 metadata:
@@ -84,7 +84,7 @@ For every non-DONE item in inbox, run the three inference passes:
 
 #### Pass C: Context Enrichment (Task 3)
 
-1. If body is < 50 chars (thin):
+1. If context is thin (i.e. body is < 50 chars):
    - Look at title, referenced skill paths, referenced projects, your knowledge — can you fill in meaningful body context?
    - **If yes:** add inferred body with flag `(context inferred — verify)`
    - **If no:** flag `⚠️ Thin context — can you elaborate?`
