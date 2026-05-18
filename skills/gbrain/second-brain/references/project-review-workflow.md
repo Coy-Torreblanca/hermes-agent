@@ -62,6 +62,40 @@ For a full picture of any project EPIC:
 - **Icebox items may still have full body text** with rich context (source articles, implementation notes). Always drill into icebox stories with `--heading` to check for this.
 - **Backlog items may be orphaned** — TODOs without a parent STORY or STORYS without a parent EPIC. The `--sprint "backlog"` query returns everything in backlog regardless of hierarchy, so cross-reference against the EPIC's known children.
 
+### Bonus: Story Completion Audit (STORY-Level Drill)
+
+When the user asks "are we done with X story" or wants a completeness check on a specific STORY (not an EPIC), use this deeper drill pattern that emerged from the TODO & Sprint Management audit (2026-05-16):
+
+1. **Load the STORY**: Use `--heading "Exact Story Title"` or `--children-of "Exact Story Title"` via execute_code (shell special chars like `&` break terminal commands — use Python subprocess)
+2. **Get the GOAL** from the STORY's `:PROPERTIES:` — this is the canonical definition of done
+3. **Map each child** against the GOAL statement:
+   - For each child STORY/TODO: what phase of the GOAL does it cover?
+   - Is it DONE? STORY-STARTED? STORY (not started)?
+4. **Cross-reference against gbrain page**:
+   - Does the gbrain page describe features that aren't in the org children? → undecomposed scope
+   - Does the gbrain page have stale stats, status fields, or counts? → flag drift
+   - Does the gbrain page say something is "missing" that's actually delivered? → update
+5. **Check for state transitions**:
+   - Were any children just marked DONE this session? Note the timestamp
+   - Was anything promoted/demoted between sprints?
+6. **Identify unresolved items**:
+   - Children with "should" language in body text (aspirational, not actionable)
+   - STORYS with empty body text (scope undefined)
+   - TODOs under no STORY parent (orphans)
+7. **Synthesize** as a requirements table:
+
+```
+| Requirement | Status | Evidence |
+|-------------|--------|----------|
+| CRUD todos | ✅ | --create-todo live, tested |
+| Habit CRUD | ✅ | habit_query.py, all CRUD |
+| Sprint retro | ❌ | Phase 4, not started |
+```
+
+Then answer: "The story GOAL is X%. Here's what's delivered, what's partial, and what's missing."
+
+**Pitfall — shell special chars in titles.** Titles with `&`, `|`, `>`, `<` will silently fail in terminal commands. Use `execute_code` with Python `subprocess.run(["python3", script, args...])` to bypass shell parsing.
+
 ## Example Output Structure
 
 ```

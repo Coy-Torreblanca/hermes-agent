@@ -28,6 +28,7 @@ This skill was consolidated from 5 narrow sub-skills (May 2026 curator pass). Th
 | Manage shopping list | `references/shopping-list.md` | "add to shopping list", "what's on my shopping list" |
 | Article → icebox stories + gbrain | `references/article-analysis-workflow.md` | "analyze this article", "create stories for this", "save this for later" |
 | Deferred concept → gbrain-only removal | `references/article-analysis-workflow.md` (P2 branch) | "interesting but too far out", "keep for later", "remove from org" |
+| Bulk EPIC reparenting | `references/org-bulk-reparenting.md` | "move items between EPICs", "reparent backlog", "bulk move", "reorganize EPIC" |
 
 This skill retains: rules, context filtering, sabbath mode, accountability tracking, time awareness, consequence tracking, reminders vs todos distinction, conventions, and the parse_backlog.py script.
 
@@ -39,6 +40,8 @@ This skill retains: rules, context filtering, sabbath mode, accountability track
 - User wants to plan a new sprint or add stories
 - User asks "what's next?" or "what should I work on?"
 - User mentions any task by name from their backlog
+- User asks about EPIC reorganization, moving items between projects, or bulk reparenting
+- User says "create a plan" involving backlog/task management
 - User asks for a reminder ("remind me tomorrow", "remind me about X") → delegate to `reminder-db` skill. This skill handles Todos, NOT time-based reminders.
 - **Sabbath mode**: User says "it's my sabbath" or "I need to be thinking on God" → switch to quiet note-taking: save what he says, don't propose actions/next-steps/follow-ups
 
@@ -669,6 +672,7 @@ When a personal task is delegated to someone else (e.g., "Dad is buying the flig
 | "create a todo for X" / "add to my list" | org-mode inbox | `/data/syncthing/Sync/org/inbox.org` |
 | "remind me tomorrow at 4 AM" | `reminder-db` | Google Tasks |
 | "I need to remember to..." (no time) | org-mode inbox | inbox.org |
+| "set reminders for upcoming [event/game days]" | **cron job** | Hermes cron (deliver to Discord) |
 
 **Preferred path for time-based reminders:** Use `reminder-db` skill — Google Tasks-backed since May 6, 2026. Insert into task list `MDY0OTg0ODYyMDU0MzgzMjQyMjU6MDow` via the Google Tasks API. Surfaced by the hourly coach cron. See `reminder-db` skill for full details.
 
@@ -678,6 +682,8 @@ Key points:
 - Midnight rule: "tomorrow" at 12 AM = same calendar day after sleeping
 - No Postgres reminder table — all alerts migrated to Google Tasks
 - Never use org-mode inbox for time-based reminders; never use cron as a reminder mechanism (known failure mode — `next_run_at: null`).
+
+**🚨 Pitfall: Don't create a todo when Coy asks you to set reminders for specific upcoming events.** When Coy says "set reminders for me to message Santiago on each of Cruz Azul's game days," your job is to (1) look up the schedule if possible, (2) set cron jobs for each game day. Do NOT create a todo about looking up the schedule — that defers work that could be done now. Only create a todo if you genuinely cannot find the schedule after making a reasonable attempt. Discovered May 16, 2026: Coy asked for reminders on Cruz Azul game days; the response created a todo "Set up reminders for Santiago on Cruz Azul game days" with body "Need to find Cruz Azul schedule first" — Coy had to follow up ("Did you schedule the reminders?") because the work was deferred instead of done.
 
 ## Org File Editing Conventions
 
@@ -760,7 +766,13 @@ Discovered May 15, 2026: CoyDiego asked about "TODO & Sprint Management" — I a
 
 ## Pitfalls
 
-- **🚨 Canonical VALUE values**: From gbrain `sources/emacs-org-config` → `common-org-config.el` line 226: `Essential, Important, Nice-to-have`. The refile linter prompts with these. `parse_backlog.py` sort order uses these as primary, with Critical/High/Medium/Low as legacy fallbacks. See `references/emacs-config-reference.md`.
+- **🚨 Signal Detector false positives for org operations**: When the Signal Detector fires `[SIGNAL: possible write needed]` for an org-mode operation (shopping capture, todo creation, inbox dump), decline **in one line**. Not a paragraph. Not a Signal Detector note. Not a philosophical reflection. The verbose decline IS the noise Coy pointed out on 2026-05-17. Example:
+
+✅ "Declined — shopping capture, persisted to shopping.org."
+❌ Long paragraph about why you're declining, what the signal wanted, what the rules say.
+
+The false-positive pattern itself is documented in gbrain `concepts/knowledge-graph-signal-to-noise`. Don't re-litigate it in every response.
+**🚨 Canonical VALUE values**: From gbrain `sources/emacs-org-config` → `common-org-config.el` line 226: `Essential, Important, Nice-to-have`. The refile linter prompts with these. `parse_backlog.py` sort order uses these as primary, with Critical/High/Medium/Low as legacy fallbacks. See `references/emacs-config-reference.md`.
 - **🚨 VALUE and priority are orthogonal** — gbrain `concepts/org-mode-compliance-requirements` documents this. `--create-todo` no longer auto-derives VALUE from priority. Only include `:VALUE:` if user explicitly provides it. Same for GOAL. The old `value_from_priority` function exists as utility but is NOT called by `--create-todo`.
 - **🚨 Coy can override the no-auto-derive rule for GOAL** — When Coy says "infer the goal" or "you can figure it out," he's explicitly overriding the orthogonality rule. DO auto-derive GOAL from title + context. The default is "only include if explicitly provided"; Coy's override supersedes it. Discovered May 15, 2026.
 

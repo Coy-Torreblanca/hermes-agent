@@ -91,7 +91,7 @@ whether to load a full page.
 - **"Tell me about X"** — get the full page (the user wants the complete picture).
 - **"Did anyone mention Y?"** — search results are enough (the user wants a yes/no with evidence).
 
-### Source precedence (see second-brain/references/quality.md)
+### Source precedence (see second-brain/references/quality.md for full rules)
 
 Follow the canonical source precedence from `quality.md`: User's direct statements > compiled truth > timeline > external sources.
 When sources conflict, note the contradiction with both citations.
@@ -104,7 +104,7 @@ When referencing brain pages in your answer, propagate inline citations:
   the user can trace facts to their origin
 - When you synthesize across multiple pages, cite all sources
 
-Quality conventions (citations, back-links, notability) are defined in `second-brain/references/quality.md` — load them with `skill_view()`.
+Quality conventions (citations, back-links, notability) are defined in `second-brain/references/quality.md` — read with `read_file /data/.hermes/skills/gbrain/second-brain/references/quality.md`.
 
 ## Graph Traversal
 

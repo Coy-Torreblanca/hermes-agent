@@ -261,8 +261,7 @@ def verify_line(filepath: str, line_num: int) -> dict:
 
 
 def insert_at_line(filepath: str, insert_after: int, block: str) -> dict:
-    """
-    Insert block after a specific line number using raw file I/O.
+    """Insert block after a specific line number using raw file I/O.
     Returns {'inserted_at': N, 'total_lines': N, 'confirm': '...'}.
     """
     try:
@@ -273,8 +272,6 @@ def insert_at_line(filepath: str, insert_after: int, block: str) -> dict:
 
     if insert_after < 0 or insert_after > len(lines):
         return {'error': f'Insert position {insert_after} out of range (0-{len(lines)})'}
-
-    # Insert block at position (0-indexed, after insert_after - 1)
     indent = '\n'
     block_lines = block.split('\n')
     inserted = [l + '\n' if not l.endswith('\n') else l for l in block_lines]
@@ -298,6 +295,67 @@ def insert_at_line(filepath: str, insert_after: int, block: str) -> dict:
     }
 
 
+def sprint_order(sprint_val) -> tuple:
+    """Convert a SPRINT value to a comparable tuple for ordering.
+    backlog -> (1, 0) - lowest priority, after all numeric sprints
+    numeric -> (0, N) - higher N = later sprint
+    unknown -> (2, 0) - after backlog, for unparseable values
+    """
+    if sprint_val is None:
+        return (1, 0)
+    s = str(sprint_val).strip().lower()
+    if s == 'backlog' or s == '':
+        return (1, 0)
+    try:
+        return (0, int(s))
+    except ValueError:
+        return (2, 0)
+
+
+def validate_sprint_hierarchy(child_sprint, parent_heading: dict) -> Optional[str]:
+    """Check that child's sprint completes before or same time as parent.
+    
+    Rule: child SPRINT must be <= parent SPRINT.
+    - backlog < any numeric sprint (backlog child under numeric parent = invalid)
+    - numeric child > numeric parent = invalid
+    - same sprint or child < parent = valid
+    - parent backlog = no constraint (unplanned parent can't constrain)
+    
+    Returns None if valid, error string if invalid.
+    """
+    parent_sprint = parent_heading.get('properties', {}).get('SPRINT')
+    
+    # No parent sprint constraint
+    if not parent_sprint:
+        return None
+    
+    parent_order = sprint_order(parent_sprint)
+    child_order = sprint_order(child_sprint)
+    
+    # Parent is backlog -> no constraint
+    if parent_order[0] == 1:
+        return None
+    
+    # Child is backlog under numeric parent -> invalid
+    if child_order[0] == 1:
+        return (
+            f'Sprint hierarchy violation: child has SPRINT: backlog but parent '
+            f'("{parent_heading.get("title", "?")}") has SPRINT: {parent_sprint}. '
+            f'Child must be planned in sprint {parent_sprint} or earlier to complete '
+            f'before or at the same time as the parent.'
+        )
+    
+    # Compare numeric sprints
+    if child_order > parent_order:
+        return (
+            f'Sprint hierarchy violation: child SPRINT: {child_sprint} is later than '
+            f'parent ("{parent_heading.get("title", "?")}") SPRINT: {parent_sprint}. '
+            f'Child must complete before or at the same time as the parent.'
+        )
+    
+    return None
+
+
 def create_todo(filepath: str, params: dict, dry_run: bool = False) -> dict:
     """
     Main entry point for deterministic todo creation.
@@ -309,6 +367,29 @@ def create_todo(filepath: str, params: dict, dry_run: bool = False) -> dict:
     todo_id = resolved['id']
 
     if dry_run:
+        # Still validate sprint hierarchy for non-inbox destinations
+        if not is_inbox:
+            # Need to resolve headings to find parent
+            try:
+                with open(filepath, 'r') as f:
+                    _ = f.read()
+                from io import StringIO
+                headings = parse_org(filepath)
+                insert_info = insert_point(headings, destination)
+                if 'error' not in insert_info:
+                    parent_props = insert_info.get('parent_properties', {})
+                    child_sprint = resolved.get('sprint')
+                    validation_error = validate_sprint_hierarchy(child_sprint, {'properties': parent_props, 'title': insert_info.get('epic', destination)})
+                    if validation_error:
+                        return {
+                            'dry_run': True,
+                            'error': validation_error,
+                            'action': 'rejected',
+                            'destination': filepath,
+                        }
+            except Exception:
+                pass  # Can't validate in dry-run if file is inaccessible
+        
         return {
             'dry_run': True,
             'destination': filepath,
@@ -351,6 +432,19 @@ def create_todo(filepath: str, params: dict, dry_run: bool = False) -> dict:
     insert_info = insert_point(headings, epic_name)
     if 'error' in insert_info:
         return insert_info
+
+    # Sprint hierarchy validation: child sprint must <= parent sprint
+    parent_props = insert_info.get('parent_properties', {})
+    child_sprint = resolved.get('sprint')
+    validation_error = validate_sprint_hierarchy(child_sprint, {'properties': parent_props, 'title': insert_info.get('epic', epic_name)})
+    if validation_error:
+        return {
+            'error': validation_error,
+            'action': 'rejected',
+            'destination': filepath,
+            'epic': epic_name,
+            'params': resolved,
+        }
 
     # Regenerate block with correct stars for EPIC level
     block, resolved = make_deterministic_block(params, stars_override=insert_info['stars'])
@@ -593,6 +687,7 @@ def insert_point(headings: list[dict], epic_name: str) -> dict:
             'last_child': last_child['title'],
             'level': epic['level'] + 1,
             'stars': '*' * (epic['level'] + 1),
+            'parent_properties': epic.get('properties', {}),
         }
     else:
         return {
@@ -602,6 +697,7 @@ def insert_point(headings: list[dict], epic_name: str) -> dict:
             'last_child': None,
             'level': epic['level'] + 1,
             'stars': '*' * (epic['level'] + 1),
+            'parent_properties': epic.get('properties', {}),
         }
 
 
@@ -658,6 +754,26 @@ def validate(headings: list[dict]) -> dict:
                 'message': f'No POINTS set: {h["title"]}',
                 'line': h['line_start'],
             })
+
+    # Check sprint hierarchy: children must have SPRINT <= parent SPRINT
+    def check_sprint_hierarchy(hs):
+        for h in hs:
+            parent_sprint = h['properties'].get('SPRINT')
+            for child in h.get('children', []):
+                child_sprint = child['properties'].get('SPRINT')
+                if child_sprint is not None and parent_sprint is not None:
+                    err = validate_sprint_hierarchy(child_sprint, {'properties': h['properties'], 'title': h['title']})
+                    if err:
+                        issues.append({
+                            'rule': 'SPRINT_HIERARCHY',
+                            'message': err,
+                            'parent': h['title'],
+                            'child': child['title'],
+                            'parent_line': h['line_start'],
+                            'child_line': child['line_start'],
+                        })
+                check_sprint_hierarchy(child.get('children', []))
+    check_sprint_hierarchy(headings)
 
     return {
         'issues': issues,
@@ -758,6 +874,10 @@ def main():
 
     elif cmd == '--find-active':
         active = find_active(headings)
+        # Optional sprint filter: --find-active <sprint_number>
+        if len(sys.argv) > 3:
+            sprint_filter = sys.argv[3].strip().lower()
+            active = [h for h in active if h['properties'].get('SPRINT', 'backlog').strip().lower() == sprint_filter]
         print(json.dumps([
             {
                 'title': h['title'],

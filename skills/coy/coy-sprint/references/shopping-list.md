@@ -59,3 +59,4 @@ Present as a simple bulleted list.
 - Do NOT add `:ID:` — let Emacs generate on next file touch
 - When removing, remove the full block (heading + properties), not just the heading line
 - This is a running list, not a todo tracker — items stay until purchased, then removed
+- **Disambiguate with packing list before capturing.** The "capture it" trigger is broad. Before adding a "buy" item to the shopping list, check if the user is preparing for a trip (check gbrain trip/packing pages). Items like wipes, toiletries, travel-size containers, earplugs, and facemasks are often packing list items (gbrain), not shopping items. If a trip is approaching, ask or route to the packing list instead. Discovered via correction May 18, 2026: items intended for the travel packlist were added to shopping.org.

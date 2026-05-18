@@ -36,7 +36,7 @@ If the name only makes sense for today's task, fall back to extending an existin
 
 Each umbrella skill should have:
 - **SKILL.md**: The governing document — triggers, workflow, pitfalls, conventions. This is where preferences and corrections live (not in memory).
-- **`references/`**: Session-specific detail — error transcripts, reproduction recipes, provider quirks, condensed knowledge banks (quoted research, API docs, domain notes). Write them concise; they are not mirrors of upstream docs.
+- **`references/`**: Session-specific detail — error transcripts, reproduction recipes, provider quirks — AND condensed knowledge banks: quoted research, API docs, external authoritative excerpts, or domain notes you found while working on the problem. Write them concise and for the value of the task, not as a full mirror of upstream docs.
 - **`templates/`**: Starter files meant to be copied and modified — boilerplate configs, scaffolding, known-good examples.
 - **`scripts/`**: Statically re-runnable actions — verification scripts, fixture generators, deterministic probes.
 
@@ -59,7 +59,7 @@ When you receive a correction signal from the user or the signal detector, do no
 ### Active Maintenance (Default On)
 
 "Nothing to save" should not be the default. Every session should produce at least one skill update — even if small. Scan for these signals every session:
-- User corrected your approach or style → embed in governing skill
+- **User corrected your style, tone, format, legibility, or verbosity** — Frustration signals like 'stop doing X', 'this is too verbose', 'don't format like this', 'why are you explaining', 'just give me the answer', 'you always do Y and I hate it', or an explicit 'remember this' are **FIRST-CLASS skill signals**, not just memory signals. Update the relevant governance skill(s) to embed the preference so the next session starts already knowing the right way.
 - A skill you loaded was outdated → patch it now
 - You discovered a new technique, fix, or workaround → capture it
 - A new class of task appeared → consider creating an umbrella
@@ -70,7 +70,7 @@ A pass that does nothing is a missed learning opportunity, not a neutral outcome
 
 When a signal fires, prefer the **earliest action that fits** — don't skip ahead to "create new" if a simpler update would work:
 
-1. **UPDATE A CURRENTLY-LOADED SKILL** — If you had a skill loaded via `skill_view()` and it covers the territory of the new learning, patch that one first. It was in play, so it's the right target.
+1. **UPDATE A CURRENTLY-LOADED SKILL** — If you had a skill loaded via `skill_view()` and it covers the territory of the new learning, patch that one first. It is the skill that was in play, so it's the right one to extend.
 2. **UPDATE AN EXISTING UMBRELLA** — If no loaded skill fits but an existing class-level umbrella does (check via `skills_list` + `skill_view`), patch it. Add a subsection, a pitfall, or broaden a trigger.
 3. **ADD A SUPPORT FILE** under an existing umbrella — Add a `reference/`, `template/`, or `script/` file when the learning is a specific recipe, transcript, or reusable probe, not a workflow change. The umbrella's SKILL.md should gain a one-line pointer to the new file.
 4. **CREATE A NEW CLASS-LEVEL UMBRELLA** — Only when no existing skill covers the class. The name MUST be at the class level (not a PR number, error string, feature codename, or today's-session artifact). If the proposed name only makes sense for today's task, fall back to 1, 2, or 3.

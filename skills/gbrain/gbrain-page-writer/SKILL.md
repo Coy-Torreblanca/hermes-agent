@@ -1,6 +1,6 @@
 ---
 name: gbrain-page-writer
-description: Use when writing or updating any page in gbrain — people, companies, projects, concepts, meetings, ideas. Loads quality/filing/schema conventions via skill_view() before every write. Handles dedup, frontmatter, two-layer structure, citations, and back-links.
+description: "Use when writing or updating any page in gbrain — people, companies, projects, concepts, meetings, ideas. Loads quality/filing/schema conventions via read_file before every write. Handles dedup, frontmatter, two-layer structure, citations, and back-links."
 version: 1.0.0
 author: Coy
 license: MIT
@@ -89,6 +89,14 @@ If this write was triggered by an event (conversation, decision, observation):
 For every person/company mentioned in the page that has a brain page:
 `mcp_gbrain_add_link(from="<this_page>", to="<entity_page>", link_type="references")`
 
+For article/research pages that relate to existing concepts or projects, also use **`applies_to`** links:
+`mcp_gbrain_add_link(from="<article_page>", to="<concept_or_project_slug>", link_type="applies_to", context="<how it applies>")`
+
+**Bidirectional linking is preferred** — when you add an `applies_to` link from an article to a project, ALSO add a `references` link from the project back to the article:
+`mcp_gbrain_add_link(from="<project_slug>", to="<article_slug>", link_type="references", context="<context>")`
+And add a timeline entry to the connected project page:
+`mcp_gbrain_add_timeline_entry(slug="<project_slug>", date="YYYY-MM-DD", summary="Referenced in <article title>", detail="<one-line context>")`
+
 Back-linking is mandatory — see `second-brain/references/quality.md`.
 
 ### Step 9: Preserve Raw Source (Optional)
@@ -107,11 +115,12 @@ If the page was created from an uploaded document, message file, or raw source a
 - **Writing above the line without updating timeline** → evidence lost
 - **Paraphrasing the user's words** → preserve exact phrasing. The language IS the insight.
 - **No back-links** → broken graph. Every entity mention must link back.
-- **Inlining config data in skill files instead of gbrain** — when a user correction involves config values, schema rules, or design decisions (e.g., "VALUE values should be X", "priority and VALUE are orthogonal"), the canonical data goes into a gbrain page. Skill and reference files point to gbrain slugs. Do NOT update the skill file with the values directly — update gbrain, then point from the skill. Discovered May 15, 2026.
+- **Inlining config data in skill files instead of gbrain** — when a user correction involves config values, schema values, or design decisions (e.g., "VALUE values should be X", "priority and VALUE are orthogonal"), the canonical data goes into a gbrain page. Skill and reference files point to gbrain slugs. Do NOT update the skill file with the values directly — update gbrain, then point from the skill. Discovered May 15, 2026.
+- **Future-possible projects go to gbrain, not org** — When the user decides not to commit to an idea but wants to keep it for later: (1) remove from tasks.org, (2) create a gbrain `concepts/` page with `status: future-possible`, (3) cross-link to source research/writing pages, (4) add timeline entry noting it's deferred. These pages surface during sprint planning via gbrain query + project-review-workflow.
 
 ## Verification Checklist
 
-- [ ] Conventions loaded via skill_view() before writing
+- [ ] Conventions loaded via read_file before writing
 - [ ] Dedup check performed (search + resolve_slugs)
 - [ ] Slug follows filing rules (primary subject → directory)
 - [ ] Frontmatter present (type, title, tags, created)

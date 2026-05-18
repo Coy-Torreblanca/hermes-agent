@@ -163,10 +163,12 @@ When reporting >50, include:
 For each orphan the user wants to connect:
 1. Read the page: `mcp_gbrain_get_page(slug="<orphan>")`
 2. Search for related pages: `mcp_gbrain_query(query="<page topic>")`
-3. Propose links: "Connect `<orphan>` to `<target>`? They both reference `<shared topic>`."
-4. Create links with user approval:
+3. **Check for missing reciprocal links:** Use `mcp_gbrain_get_backlinks(slug="<orphan>")` to see if any pages already link TO the orphan. If a page backlinks the orphan but the orphan doesn't link back, that's a missing reciprocal — create it.
+   - Example: A research-paper page has inbound backlinks from concept pages derived from it, but the original page doesn't link forward to those concepts. Fix the symmetry.
+4. Propose links: "Connect `<orphan>` to `<target>`? They both reference `<shared topic>`."
+5. Create links with user approval:
    ```mcp_gbrain_add_link(from="<orphan>", to="<target>", link_type="references")```
-5. Log a friction entry if an orphan can't be connected (missing related pages → ingestion gap)
+6. Log a friction entry if an orphan can't be connected (missing related pages → ingestion gap)
 
 ### Batch Approach (When Many Related Orphans)
 

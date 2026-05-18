@@ -41,36 +41,55 @@ Periodically enriches article, writing, idea, and media pages in gbrain by:
 
 ### Step 1: Find Target Articles
 
-Use `mcp_gbrain_find_orphans(include_pseudo=false)` and filter to types: writing, idea, media, originals.
+Use `mcp_gbrain_find_orphans(include_pseudo=false)` and filter to article/research types (research-paper, resource, article).
+
+**⚠️ Truncation pitfall:** When the brain has many orphans (800+), the MCP tool's output can exceed 190K chars and get truncated. You'll see only the first ~100 orphans. Work around:
+
+1. Use `mcp_gbrain_list_pages(sort="updated_desc", limit=200)` to get recently-updated pages with their types
+2. Cross-reference returned slugs against your truncated orphans list
+3. For candidates you can't resolve, use `mcp_gbrain_get_backlinks(slug="<candidate>")` and `mcp_gbrain_get_links(slug="<candidate>")` to determine orphan status on a case-by-case basis
+4. Prioritize the most recently updated orphans first (they're the active content)
 
 **Priority:**
-1. Pages with 0 back-links (orphans — highest priority)
-2. Pages with 1-2 back-links (partially connected)
-3. Most recently updated pages
+1. Pages with 0 inbound backlinks (orphans — highest priority)
+2. Pages with 1-2 inbound backlinks but missing bidirectional connections to derived concepts
+3. Most recently updated pages first
 4. Pages tagged as high-value
 
 ### Step 2: Analyze Content
 
 For each article:
 - Read full content via `mcp_gbrain_get_page(slug="<slug>")`
-- Extract entities: people, companies, organizations, projects, concepts, locations
+- Extract entities: people, companies, organizations, projects, **concepts**, locations
+- Also extract **derived concepts** — brain pages that were created *based on* this article (e.g., a LangGraph concept page derived from the OncoAgent paper)
 - Only extract entities that are **substantively discussed**, not merely mentioned
 
-### Step 3: Resolve and Link
+### Step 3: Check Existing Links
+
+Before linking, understand the current state:
+
+1. **Check outbound links:** `mcp_gbrain_get_links(slug="<article>")` — what does the article already link to?
+2. **Check inbound backlinks:** `mcp_gbrain_get_backlinks(slug="<article>")` — what pages already link here?
+3. **Cross-reference:** If a concept page backlinks TO the article (found in step 2), but the article doesn't link FORWARD to that concept, you have a **missing bidirectional link**.
+
+**Key insight:** Research articles often link TO projects (applies_to links) but don't link back TO the concept pages that were *derived from* them. The derived concepts link TO the article, but the article doesn't reciprocate. Fix this.
+
+### Step 4: Resolve and Link
 
 For each extracted entity:
-- Check existing pages: `mcp_gbrain_resolve_slugs(partial="<name>")`
+- Check existing pages: `mcp_gbrain_resolve_slugs(partial="<name>")` or `mcp_gbrain_query(query="<name>", limit=5)`
 - If page exists → `mcp_gbrain_add_link(from="<article>", to="<entity>", link_type="references")`
-- Also add timeline entry: `mcp_gbrain_add_timeline_entry(slug="<entity>", summary="Referenced in <article>")`
-- If no page exists → evaluate notability. Create stub only if likely to be referenced again.
+- If an existing concept page backlinks TO the article but the article doesn't link to it → add the reciprocal link: `mcp_gbrain_add_link(from="<article>", to="<concept>", link_type="references")`
+- If no page exists → evaluate notability. Most external entities (HubSpot, BCG, individual authors) do NOT pass the notability gate — don't create stubs for them.
+- **Also scan for unlinked references:** search for pages that mention the article by name but don't have graph links (e.g., a concept like `deferred-icebox-management` referencing "OncoAgent paper" without linking). Connect those too.
 
-### Step 4: Skip Well-Connected
+### Step 5: Skip Well-Connected
 
-If article already has 5+ outbound links (`mcp_gbrain_get_links`), skip it — already enriched.
+If article already has 5+ outbound links (`mcp_gbrain_get_links`), skip it — already enriched. BUT: still check for missing reciprocal links (step 3 pattern). If missing reciprocals exist, add them even if the article has 5+ total outbound links.
 
-### Step 5: Report
+### Step 6: Report
 
-Summary to Discord: articles processed, entities linked, stubs created, entities skipped.
+Summary to Discord: articles processed, entities linked, missing reciprocal links fixed, unlinked references connected, entities skipped (notability gate).
 
 ## Quality Rules
 

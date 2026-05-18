@@ -18,6 +18,7 @@ Manage Coy's packing lists for upcoming trips. Lists live as gbrain checklist pa
 - User says "what's on my packing list?" or "check my packlist"
 - User mentions packing for a trip
 - User says "remind me to pack X"
+- User mentions buying consumables (wipes, toiletries, travel-size items, earplugs, facemasks) during trip prep — may be packing list items, not shopping list items
 
 ## Where Packlists Live
 
@@ -98,3 +99,4 @@ When the user mentions a travel mistake (overweight bag, forgotten item, missed 
 - **Don't rely on search_files or gbrain search alone.** Use `mcp_gbrain_list_pages` to browse page titles — the search index may not always hit checklist-type pages.
 - **Google the filesystem before gbrain as a fallback.** The Sync directory and org files won't have packlists. Trust gbrain.
 - **Devices section** is where charge reminders and electronics live. The authoritative device list is on the gbrain packlist page itself (Pixel phone, MacBook Pro, overhead headphones) — always read the gbrain page rather than relying on memory or session context.
+- **Disambiguate shopping vs packing.** When the user says they need to "buy" or "get" consumables (wipes, toiletries, travel-size containers, earplugs, facemasks), don't assume it's a shopping list item. Check whether they're preparing for a trip. If an upcoming trip exists and the item is a travel consumable, it belongs on the packing list (gbrain), not the shopping list (org-mode). Discovered via correction May 18, 2026: items intended for the travel packlist were added to shopping.org instead.

@@ -1,6 +1,6 @@
 ---
 name: coy-sprint-inbox-triage
-description: Batch inbox triage for Coy's sprint system — reads all inbox items, applies auto-project detection (EPIC scoring), auto-point estimation (hours→points table), context enrichment (ask if unsure), presents all proposals as one org-text block, executes approved moves in batch, and rotates org triage daily habit afterwards.
+description: Batch inbox triage for Coy's sprint system — reads all inbox items, applies auto-project detection (EPIC scoring), auto-point estimation (hours→points table), context enrichment (ask if unsure), presents all proposals as one org-text block, executes approved moves in batch, and rotates daily habits. Phase 3 Inbox Intelligence.
 version: 1.0.0
 author: Hermes Agent
 metadata:
@@ -84,12 +84,25 @@ For every non-DONE item in inbox, run the three inference passes:
 
 #### Pass C: Context Enrichment (Task 3)
 
-1. If context is thin (i.e. body is < 50 chars):
+1. If body is < 50 chars (thin):
    - Look at title, referenced skill paths, referenced projects, your knowledge — can you fill in meaningful body context?
    - **If yes:** add inferred body with flag `(context inferred — verify)`
    - **If no:** flag `⚠️ Thin context — can you elaborate?`
 2. If body ≥ 50 chars: leave as-is (context is sufficient)
 3. **Never hallucinate.** If you don't have the information, don't make it up. Ask Coy.
+
+#### Pass D: Sprint Hierarchy Check (Sprint Invariant)
+
+After determining the parent EPIC and proposed SPRINT, validate the sprint hierarchy:
+
+1. **Get the parent EPIC's SPRINT** from `org_query.py --epics` or `--find-epic`
+2. **Enforce the invariant:** child SPRINT must be ≤ parent SPRINT
+   - If parent has SPRINT: 4 and child is SPRINT: backlog → ❌ REJECT. Child must be planned in sprint 4 or earlier.
+   - If parent has SPRINT: 4 and child is SPRINT: 4 → ✅ OK.
+   - If parent has SPRINT: 4 and child is SPRINT: 3 → ✅ OK (child completes before parent).
+   - If parent has SPRINT: backlog → no constraint (unplanned parent can't constrain child).
+3. **If violated:** adjust the proposal to match the parent's sprint, or propose a different parent EPIC with a compatible sprint. Flag the adjustment in the proposal text: `(SPRINT adjusted from backlog to 4 to match parent)`
+4. **The `--create-todo` command enforces this automatically** — if you forget this check, the script will reject the insertion with a clear error.
 
 ### Phase 3: Present All Proposals (single block)
 

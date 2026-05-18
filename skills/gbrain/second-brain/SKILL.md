@@ -42,7 +42,7 @@ Load this skill when:
 | "brain health", "maintenance", "fix citations", "audit sources", "check frontmatter", "fix metadata", "validate pages" | Call `skill_view` with `name="gbrain-maintain"` |
 | "review [project] goals", "overview of planned features", "what's planned for X" | Load the `coy-sprint` skill + `second-brain` and follow `references/project-review-workflow.md` |
 
-> **Note:** `gbrain-citation-fixer` and `gbrain-frontmatter-guard` are sub-operations dispatched by `gbrain-maintain`, not standalone entry points. The sub-ingest skills (`gbrain-idea-ingest`, `gbrain-media-ingest`, `gbrain-meeting-ingestion`, `gbrain-voice-note-ingest`) are dispatched by `gbrain-ingest`. `gbrain-article-enrichment` is a cron job reference doc, not an interactive skill.
+> **Note:** `gbrain-citation-fixer` and `gbrain-frontmatter-guard` are sub-operations dispatched by `gbrain-maintain`, not standalone entry points. `gbrain-article-enrichment` is a cron job reference doc, not an interactive skill — the workflow runs automatically as the Sunday cron job. The sub-ingest skills (`gbrain-idea-ingest`, `gbrain-media-ingest`, `gbrain-meeting-ingestion`, `gbrain-voice-note-ingest`) are dispatched by `gbrain-ingest`.
 
 ## Deep References (Context Expansion)
 
@@ -61,3 +61,4 @@ Before writing page content, load the schema:
 Before finalizing page output, load the output rules:
 
 * Call `read_file` with `path="/data/.hermes/skills/gbrain/second-brain/references/project-review-workflow.md"` — when the user asks to review a project's goals, planned features, or todos. Combines brain knowledge with org task state.
+* Call `read_file` with `path="/data/.hermes/skills/gbrain/second-brain/references/idea-to-plan-capture-workflow.md"` — when the user says "document this for later" or proposes a system improvement that needs both a gbrain concept page and an org story.

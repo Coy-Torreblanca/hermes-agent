@@ -121,3 +121,4 @@ Canonical VALUE enum (from `common-org-config.el` line 226): `Essential`, `Impor
 - **Whitespace in titles** — if using heredoc, title whitespace is preserved. If using `--create-todo`, the JSON handles it.
 - **Not for reminders** — time-based alerts use `reminder-db`. This is for task capture only.
 - **Syncthing sync** — changes appear on the Mac within seconds. No manual sync needed.
+- **Sprint hierarchy invariant:** `--create-todo` enforces that a child's SPRINT ≤ its parent's SPRINT. If you try to insert a backlog child under a parent with SPRINT: 4, the script **rejects** the insert with an error. Fix: either match the parent's sprint or choose a different parent EPIC.

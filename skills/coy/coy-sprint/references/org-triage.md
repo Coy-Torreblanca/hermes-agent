@@ -88,6 +88,19 @@ Remove DONE items from `/data/syncthing/Sync/org/inbox.org` after triage.
 - **Capacity**: max 16 pts/sprint. Warn if committing would exceed.
 - **VALUE**: Critical > High > Medium > Low
 
+## Sprint Hierarchy Invariant (MANDATORY)
+
+**Rule:** A child's SPRINT must be ≤ its parent's SPRINT (child completes before or at same time as parent).
+
+- Backlog child under a numeric-sprint parent → **INVALID**. The child must be planned in the same sprint or earlier.
+- Numeric child under backlog parent → **OK** (unplanned parent can't constrain).
+- Same sprint → **OK**.
+- Child sprint < parent sprint → **OK** (child completes first).
+
+This is enforced by `org_query.py --create-todo` — it will **reject** any insertion that violates the invariant with a clear error message. The `--validate` flag also checks the entire hierarchy and reports violations.
+
+During triage: if you propose an item under a parent with an incompatible sprint, adjust the child's SPRINT to match the parent, or choose a different parent.
+
 ## Implementation
 
 Move items with Python heredoc pattern via terminal — never `read_file` → extract → write (causes line-number corruption). See `references/refile-script-pattern.md`.
