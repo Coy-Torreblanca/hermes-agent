@@ -32,6 +32,25 @@ read_file /data/.hermes/skills/coy/coy-sprint/references/org-capture.md  — pro
 read_file /data/syncthing/Sync/org/work/tasks.org  — for EPIC list
 ```
 
+## Cardinal Rule: Default Sprint Placement
+
+**New inbox items go to backlog or next sprint — NOT the current sprint — unless they are urgent or Coy explicitly requested them for the current sprint.**
+
+| Condition | Sprint Assignment |
+|-----------|------------------|
+| Default (no urgency signal) | `:SPRINT: backlog` |
+| Clearly needed soon but not urgent | `:SPRINT: N+1` (next sprint) |
+| Urgent (blocking, breaking, time-critical deadline) | Present as sprint candidate with rationale |
+| Coy explicitly said "put in current sprint" | `:SPRINT: current N` — no further justification needed |
+
+**🚨 Do not infer urgency from topic or priority cookie alone.** "Important" or `[#A]` does not mean "sprint now." The triaged item must be genuinely blocking or time-bound.
+
+**Exception:** If the parent EPIC has a numeric sprint (e.g., SPRINT: 4) and the item must live under it, the sprint hierarchy invariant (child ≤ parent) may force the child into that sprint. In that case:
+1. Note the forced adjustment explicitly in the proposal: `(SPRINT adjusted to 4 to match parent EPIC hierarchy)`
+2. Flag it for Coy's attention — he may want to move the item to a different EPIC instead
+
+See [[concepts/org-triage-backlog-default]] for the full rationale. [Source: User, Coral, 2026-05-18]
+
 ## Workflow
 
 ### Phase 1: Read All Inbox Items (single pass)
@@ -91,18 +110,77 @@ For every non-DONE item in inbox, run the three inference passes:
 2. If body ≥ 50 chars: leave as-is (context is sufficient)
 3. **Never hallucinate.** If you don't have the information, don't make it up. Ask Coy.
 
-#### Pass D: Sprint Hierarchy Check (Sprint Invariant)
+#### Pass A.5: ICEBOX Sibling Routing (Detour Check)
 
-After determining the parent EPIC and proposed SPRINT, validate the sprint hierarchy:
+After scoring EPICs, check if the highest-scoring EPIC has an **ICEBOX sibling** EPIC (same umbrella concept, `[ICEBOX]` suffix in title). Example: `Personal AI v1` (active, Sprint 4) has `Personal AI v2 [ICEBOX]` (backlog) as a sibling.
 
-1. **Get the parent EPIC's SPRINT** from `org_query.py --epics` or `--find-epic`
-2. **Enforce the invariant:** child SPRINT must be ≤ parent SPRINT
-   - If parent has SPRINT: 4 and child is SPRINT: backlog → ❌ REJECT. Child must be planned in sprint 4 or earlier.
-   - If parent has SPRINT: 4 and child is SPRINT: 4 → ✅ OK.
-   - If parent has SPRINT: 4 and child is SPRINT: 3 → ✅ OK (child completes before parent).
-   - If parent has SPRINT: backlog → no constraint (unplanned parent can't constrain child).
-3. **If violated:** adjust the proposal to match the parent's sprint, or propose a different parent EPIC with a compatible sprint. Flag the adjustment in the proposal text: `(SPRINT adjusted from backlog to 4 to match parent)`
-4. **The `--create-todo` command enforces this automatically** — if you forget this check, the script will reject the insertion with a clear error.
+Route the item to the ICEBOX sibling when:
+- The item is a **non-urgent improvement or housekeeping task** that conceptually relates to the active EPIC's domain
+- The active sprint is already full or near-full (capacity concerns)
+- Coy hasn't explicitly said "put this in the current sprint"
+
+Decision logic:
+1. If the active EPIC has an ICEBOX sibling EPIC → propose the ICEBOX sibling as destination
+2. Flag in the proposal: `(routed to ICEBOX sibling — non-urgent, active sprint full)`
+3. Only use the active EPIC as destination if the item is urgent/time-critical or Coy explicitly assigned it there
+4. See gbrain `concepts/org-triage-backlog-default` for the backlog-default rationale, and the ICEBOX Protocol in `wiki/sources/org-work-summary`
+[Source: User, Discord, 2026-05-18]
+
+#### Pass D: Sprint Hierarchy Validation via `--dry-run` 🚨 MANDATORY
+
+After determining the parent EPIC, points, value, and sprint for a non-inbox item, run `org_query.py --dry-run` with the exact params you intend to propose. This validates the sprint hierarchy invariant automatically and catches errors BEFORE presenting to Coy.
+
+**Procedure:**
+
+1. Build the JSON params for the proposed insertion (same shape as `--create-todo`):
+   ```json
+   {
+     "title": "Story Title",
+     "body": "Body text...",
+     "destination": "EPIC Name",
+     "keyword": "STORY",
+     "points": 3,
+     "value": "Important",
+     "sprint": "backlog"
+   }
+   ```
+
+2. Run dry-run validation:
+   ```bash
+   org_query=/data/.hermes/scripts/org_query.py
+   python3 "$org_query" --dry-run '{"title":"...","body":"...","destination":"EPIC Name","keyword":"STORY","points":3,"value":"Important"}'
+   ```
+
+3. **Interpret the result:**
+   - If `"action": "rejected"` with `"error"` containing "Sprint hierarchy violation" → **SPRINT mismatch.** The child's sprint is incompatible with the parent EPIC's sprint. **Fix:** Adjust the child's sprint to match the parent EPIC's sprint, then re-run the dry-run to confirm.
+   - If `"action": "rejected"` with other error → **Other validation failure.** Flag the issue in the proposal and present both the proposed params and the error.
+   - If no `"error"` field → ✅ **Valid.** Proceed with the proposal as-is.
+
+4. **Always adjust before presenting.** Never propose an item to Coy that would fail dry-run validation. The proposal must be pre-validated.
+
+5. **Flag adjustments in the proposal text:**
+   ```
+   (SPRINT adjusted from backlog to 4 to match parent EPIC "Personal AI v1")
+   ```
+
+**Example fixing flow — backlog item under Sprint 4 EPIC:**
+```
+Proposed: {'title':'Fix gbrain org split','destination':'Personal AI v1','sprint':'backlog'}
+
+→ Dry-run result: REJECTED — Sprint hierarchy violation:
+  Child has SPRINT: backlog but parent "Personal AI v1" has SPRINT: 4.
+  Child must be planned in sprint 4 or earlier.
+
+→ Adjust: change sprint to 4 to match parent
+
+→ Re-run dry-run: ✅ VALID
+
+→ Present: "→ tasks.org > Personal AI v1 > ** STORY Fix gbrain org split
+   :SPRINT:   4  (adjusted from backlog to match parent)
+   ..."
+```
+
+**Why this matters (CoyDiego correction, 2026-05-18):** Without dry-run validation before presenting, the triage skill proposes insertions that violate the sprint hierarchy invariant. Coy discovers the rule violation instead of the agent catching it proactively. Running `--dry-run` on every proposed EPIC insertion before presenting is the gate that keeps proposals rule-compliant.
 
 ### Phase 3: Present All Proposals (single block)
 

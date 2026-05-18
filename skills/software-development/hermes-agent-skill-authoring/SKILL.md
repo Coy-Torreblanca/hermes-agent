@@ -42,7 +42,20 @@ Each umbrella skill should have:
 
 A long flat list of narrow skills means the agent can't find the right one, and the user has to maintain dozens of near-identical entries.
 
-### Embedding User Preferences in SKILL.md Body
+### Memory vs. Skills — Sharp Boundary
+
+Memory and skills serve different purposes. Confusing them is the most common skill-update mistake.
+
+| Store | Purpose | Example |
+|-------|---------|---------|
+| **Memory** | Who the user is + what the current environment/situation is | "User prefers concise responses." "Project uses pytest with xdist." |
+| **SKILL.md body** | How to do this class of task for this user | "Before presenting EPIC insertions, run `--dry-run` first. If rejected, adjust SPRINT to match parent." |
+
+**The rule:** If a correction tells you HOW to do a task (sequence, rule, approach, tool preference, format preference), it goes in the SKILL.md body of the governing task skill. **Even if you also save it to memory**, the SKILL.md is the canonical location — and the memory entry should NOT duplicate the workflow instruction. Memory should only record the fact that the protocol exists or was established (e.g., "Dry-run validation protocol established May 18"), not re-state the procedure.
+
+This applies especially to workflow preferences — the triage dry-run protocol, the habit toggle method, the refile cleanup step — all belong in the governing skill body, not in memory. Memory is for identity and environment facts, not for re-listing procedures.
+
+[Source: CoyDiego correction, Lab/#secondbrain, 2026-05-18]
 
 When the user corrects your style, tone, format, workflow, or approach, the correction belongs in the **SKILL.md body** of the skill that governs that class of task — not just in memory.
 
@@ -72,7 +85,7 @@ When a signal fires, prefer the **earliest action that fits** — don't skip ahe
 
 1. **UPDATE A CURRENTLY-LOADED SKILL** — If you had a skill loaded via `skill_view()` and it covers the territory of the new learning, patch that one first. It is the skill that was in play, so it's the right one to extend.
 2. **UPDATE AN EXISTING UMBRELLA** — If no loaded skill fits but an existing class-level umbrella does (check via `skills_list` + `skill_view`), patch it. Add a subsection, a pitfall, or broaden a trigger.
-3. **ADD A SUPPORT FILE** under an existing umbrella — Add a `reference/`, `template/`, or `script/` file when the learning is a specific recipe, transcript, or reusable probe, not a workflow change. The umbrella's SKILL.md should gain a one-line pointer to the new file.
+3. **ADD A SUPPORT FILE** under an existing umbrella — Add a `references/`, `templates/`, or `scripts/` file when the learning is a specific recipe, transcript, or reusable probe, not a workflow change. The umbrella's SKILL.md should gain a one-line pointer to the new file so future sessions discover it.
 4. **CREATE A NEW CLASS-LEVEL UMBRELLA** — Only when no existing skill covers the class. The name MUST be at the class level (not a PR number, error string, feature codename, or today's-session artifact). If the proposed name only makes sense for today's task, fall back to 1, 2, or 3.
 
 If you notice two existing skills that overlap, note it in your reply — the background curator handles consolidation at scale. Don't reorganize the library in a single session; just flag the overlap.

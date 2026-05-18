@@ -50,6 +50,8 @@ Read `/data/syncthing/Sync/org/inbox.org` for uncategorized items. Read `/data/s
 - Strip nothing — context loss during triage is irreversible
 
 **Sprint placement:**
+| **⚠️ Default to backlog.** New items go to backlog or next sprint — NOT the current sprint — unless urgent or explicitly requested for current sprint. See gbrain [[concepts/org-triage-backlog-default]].
+
 - Current sprint: if critical + capacity allows (≤ 16 pts total when added)
 - Backlog: if non-critical OR sprint is full
 - Consider existing sprint load before committing
@@ -58,6 +60,21 @@ Read `/data/syncthing/Sync/org/inbox.org` for uncategorized items. Read `/data/s
 - POINTS: Fibonacci (1, 2, 3, 5, 8, 13, 21) per the point-to-hour table
 - VALUE: Critical, High, Medium, or Low
 - SPRINT: current sprint number or `backlog`
+
+### 2b. 🚨 Dry-run validation (before presenting)
+
+Before presenting any proposal that inserts a STORY/TODO under an EPIC in tasks.org, run `org_query.py --dry-run` with the exact params:
+
+```bash
+org_query=/data/.hermes/scripts/org_query.py
+python3 "$org_query" --dry-run '{"title":"...","body":"...","destination":"EPIC Name","keyword":"STORY","points":3,"value":"Important","sprint":"backlog"}'
+```
+
+- If result has `"action": "rejected"` with sprint hierarchy error → adjust child SPRINT to match parent sprint, re-run dry-run
+- If result is error-free → ✅ safe to present
+- **Never present a proposal that would fail dry-run validation.** The proposal must be pre-validated.
+
+Flag any adjustments in the proposal text: `(SPRINT adjusted from backlog to 4 to match parent)`
 
 ### 3. Present proposal
 Show the exact org text that will be written — full properties drawer, priority cookie, body, hierarchy. Present parent assignment.
