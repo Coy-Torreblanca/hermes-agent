@@ -493,5 +493,67 @@ class TestCLIIntegration(unittest.TestCase):
         self.assertEqual(result["sprint"], 4)
 
 
+class TestRetro(unittest.TestCase):
+    """Tests for compute_retro() — sprint retrospective reports."""
+
+    def test_retro_returns_expected_keys(self):
+        """--retro should return sprint, committed, completed, cancelled, completion_ratio, velocity_pts, blocked_count, blocked_items, pain_points."""
+        result = run_script(SAMPLE_TASKS, "--retro", "4")
+        self.assertIn("sprint", result)
+        self.assertIn("committed", result)
+        self.assertIn("completed", result)
+        self.assertIn("cancelled", result)
+        self.assertIn("completion_ratio", result)
+        self.assertIn("velocity_pts", result)
+        self.assertIn("blocked_count", result)
+        self.assertIn("blocked_items", result)
+        self.assertIn("pain_points", result)
+
+    def test_retro_sprint_4_counts(self):
+        """Sprint 4 should have committed items and 1 completed."""
+        result = run_script(SAMPLE_TASKS, "--retro", "4")
+        self.assertEqual(result["sprint"], "4")
+        self.assertGreater(result["committed"], 0)
+        self.assertGreaterEqual(result["completed"], 1)
+        self.assertEqual(result["cancelled"], 0)
+
+    def test_retro_completion_ratio(self):
+        """Completion ratio should be between 0 and 1."""
+        result = run_script(SAMPLE_TASKS, "--retro", "4")
+        ratio = result["completion_ratio"]
+        self.assertGreaterEqual(ratio, 0.0)
+        self.assertLessEqual(ratio, 1.0)
+
+    def test_retro_velocity_points(self):
+        """Velocity in points should be a non-negative integer."""
+        result = run_script(SAMPLE_TASKS, "--retro", "4")
+        self.assertGreaterEqual(result["velocity_pts"], 0)
+
+    def test_retro_all_sprints(self):
+        """--retro all should aggregate across all sprints."""
+        result = run_script(SAMPLE_TASKS, "--retro", "all")
+        self.assertEqual(result["sprint"], "all")
+        self.assertGreater(result["committed"], 0)
+
+    def test_retro_edge_cases_sprint_3(self):
+        """Sprint 3 in edge_cases.org should have 2 items."""
+        result = run_script(EDGE_CASES, "--retro", "3")
+        self.assertEqual(result["committed"], 2)
+        self.assertEqual(result["completed"], 0)
+
+    def test_retro_defaults_to_sprint_4(self):
+        """--retro with no sprint arg should default to 4."""
+        result = run_script(SAMPLE_TASKS, "--retro")
+        self.assertEqual(result["sprint"], "4")
+        self.assertGreater(result["committed"], 0)
+
+    def test_retro_excludes_epics(self):
+        """EPIC headings should not be counted as committed items."""
+        result = run_script(SAMPLE_TASKS, "--retro", "4")
+        # EPIC "Personal AI v1" has SPRINT:4 but should be excluded
+        for item in result.get("pain_points", []):
+            self.assertNotEqual(item["keyword"], "EPIC", "EPIC should not appear in retro items")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

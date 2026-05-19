@@ -13,6 +13,11 @@ Plan sprints, check capacity, track velocity, and roll over unfinished work. Mir
 
 ### 1. Sprint Planning (beginning of sprint)
 
+**Sprint boundaries:** Sprint start = last LOGBOOK DONE timestamp of Bi-Weekly Sprint Cleanup habit. Sprint end = SCHEDULED date of that habit. See gbrain [[concepts/sprint-date-derivation]].
+
+- Current sprint (Sprint 4): `2026-04-11` → `2026-05-30`
+- Derivation: `habit_query.py /data/syncthing/Sync/org/work/sprint_habits.org --list` → find "Bi-Weekly Sprint Cleanup" → scheduled + last LOGBOOK timestamp
+
 **Read the landscape:**
 - Current sprint number from `/data/syncthing/Sync/org/work/tasks.org`
 - All backlog items (SPRINT: backlog or no SPRINT) in tasks.org

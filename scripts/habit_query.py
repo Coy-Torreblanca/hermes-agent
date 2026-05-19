@@ -364,14 +364,18 @@ def reschedule_habit(filepath: str, title_query: str,
 
 
 def toggle_habit(filepath: str, title_query: str) -> dict:
-    """Mark a habit DONE for today by adding a LOGBOOK entry."""
+    """Mark a habit DONE for today by adding a LOGBOOK entry
+    AND advancing the SCHEDULED date per the repeater pattern."""
     habits = list_habits(filepath)
     habit = find_habit(habits, title_query)
     if not habit:
         return {'error': f'Habit matching "{title_query}" not found'}
 
     today_str = datetime.now().strftime('%Y-%m-%d %a %H:%M')
-    state_line = f'  - State "DONE"       from "{habit["keyword"]}"       [{today_str}]\n'
+    # Use 3-space indent to match existing org-mode LOGBOOK convention
+    state_line = f'   - State "DONE"       from "{habit["keyword"]}"       [{today_str}]\n'
+
+    today_date = date.today()
 
     with open(filepath) as f:
         lines = f.readlines()
@@ -400,6 +404,47 @@ def toggle_habit(filepath: str, title_query: str) -> dict:
 
     # Insert the state line right after :END:
     lines.insert(insert_at, state_line)
+
+    # Now advance the SCHEDULED date according to the repeater pattern
+    advance_date = None
+    for i, line in enumerate(lines):
+        sched_m = SCHEDULED_RE.match(line)
+        if sched_m:
+            raw_repeater = sched_m.group('repeater').strip()
+            if raw_repeater == '+1d':
+                advance_date = today_date + timedelta(days=1)
+            elif raw_repeater == '.+1d/2d':
+                # Advance to next weekday (skip Sat/Sun)
+                next_day = today_date + timedelta(days=1)
+                while next_day.weekday() >= 5:  # 5=Sat, 6=Sun
+                    next_day += timedelta(days=1)
+                advance_date = next_day
+            elif raw_repeater in ('+1w', '++2w/21d'):
+                advance_date = today_date + timedelta(days=7)
+            elif raw_repeater == '+2w':
+                advance_date = today_date + timedelta(days=14)
+            elif raw_repeater == '+1m':
+                # Advance to next month, same day (or last day of next month)
+                month = today_date.month + 1
+                year = today_date.year
+                if month > 12:
+                    month = 1
+                    year += 1
+                try:
+                    advance_date = today_date.replace(year=year, month=month)
+                except ValueError:
+                    # Day overflow — use last day of next month
+                    import calendar
+                    last_day = calendar.monthrange(year, month)[1]
+                    advance_date = today_date.replace(year=year, month=month, day=last_day)
+            else:
+                # Unknown repeater — skip advancement
+                pass
+
+            if advance_date:
+                day_name = advance_date.strftime('%A')
+                lines[i] = f'   SCHEDULED: <{advance_date.strftime("%Y-%m-%d")} {day_name} {raw_repeater}>\n'
+            break
 
     with open(filepath, 'w') as f:
         f.writelines(lines)

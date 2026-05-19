@@ -79,6 +79,17 @@ When you receive a correction signal from the user or the signal detector, do no
 
 A pass that does nothing is a missed learning opportunity, not a neutral outcome.
 
+#### Signal Categories
+
+When scanning a session for learning signals, check these four categories in priority order:
+
+1. **Style/Tone/Format Corrections** — User said "stop doing X", "this is too verbose", "don't format like this", "why are you explaining", "just give me the answer", "you always do Y and I hate it", or "remember this". These are FIRST-CLASS skill signals. Never put them only in memory — embed in the governing skill's pitfalls, style subsection, or format conventions.
+2. **Workflow/Sequence Corrections** — User corrected your step order, tool choice, or approach. Encode as a pitfall or explicit workflow step in the skill that governs that task class. The next session must start already knowing the right sequence.
+3. **Non-Trivial Techniques** — Bug fixes, workarounds, debugging paths, tool-usage patterns, or testing strategies that emerged from solving a real problem. Capture as a recipe, reference file, or script under the governing umbrella.
+4. **Stale/Outdated Skills** — Any skill that was loaded this session and was wrong, missing steps, or referenced stale data. Patch it immediately — don't wait for a maintenance pass.
+
+If none of these categories fired in a session, "Nothing to save." is valid — but it should not be the default assumption. Scan proactively.
+
 #### Preference Order (which action to take)
 
 When a signal fires, prefer the **earliest action that fits** — don't skip ahead to "create new" if a simpler update would work:

@@ -62,3 +62,4 @@ Before finalizing page output, load the output rules:
 
 * Call `read_file` with `path="/data/.hermes/skills/gbrain/second-brain/references/project-review-workflow.md"` — when the user asks to review a project's goals, planned features, or todos. Combines brain knowledge with org task state.
 * Call `read_file` with `path="/data/.hermes/skills/gbrain/second-brain/references/idea-to-plan-capture-workflow.md"` — when the user says "document this for later" or proposes a system improvement that needs both a gbrain concept page and an org story.
+* Call `read_file` with `path="/data/.hermes/skills/gbrain/second-brain/references/gbrain-sync-architecture.md"` — when asked about how gbrain stays fresh, real-time vs batch sync, or the parallel sync agent architecture.

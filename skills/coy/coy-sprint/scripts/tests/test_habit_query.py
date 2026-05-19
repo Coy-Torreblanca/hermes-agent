@@ -550,5 +550,208 @@ class TestUtility(unittest.TestCase):
             self.assertIn(p, hq.REPEATER_PATTERNS, f"Missing pattern: {p}")
 
 
+class TestToggle(unittest.TestCase):
+    """Toggle habit: state line indent, SCHEDULED advancement."""
+
+    TEMP_FILE = '/tmp/test_toggle_habits.org'
+
+    WEEKDAY_HABIT = '* TODO Daily Org Triage\n' \
+                    '   SCHEDULED: <2026-05-18 Mon .+1d/2d>\n' \
+                    '   :PROPERTIES:\n' \
+                    '   :STYLE:    habit\n' \
+                    '   :ID:       habit-org-triage\n' \
+                    '   :END:\n' \
+                    '   - State "DONE"       from "TODO"       [2026-05-16 Sat 06:52]\n' \
+                    '\n'
+
+    DAILY_HABIT = '* TODO Daily exercise\n' \
+                  '   SCHEDULED: <2026-05-18 Mon +1d>\n' \
+                  '   :PROPERTIES:\n' \
+                  '   :STYLE:    habit\n' \
+                  '   :END:\n' \
+                  '   - State "DONE"       from "TODO"       [2026-05-17 Sun 07:00]\n' \
+                  '\n'
+
+    WEEKLY_HABIT = '* TODO 📖 Study Anglican liturgy\n' \
+                   '   SCHEDULED: <2026-05-23 Sat +1w>\n' \
+                   '   :PROPERTIES:\n' \
+                   '   :STYLE:    habit\n' \
+                   '   :END:\n' \
+                   '\n' \
+                   '  Body content here.\n' \
+                   '\n'
+
+    MONTHLY_HABIT = '* TODO 💸 Pay rent\n' \
+                    '   SCHEDULED: <2026-06-02 Tue +1m>\n' \
+                    '   :PROPERTIES:\n' \
+                    '   :STYLE:    habit\n' \
+                    '   :ID:       E463F6634B924F9EB9A95DA5749B767A\n' \
+                    '   :END:\n' \
+                    '\n' \
+                    '  Rent is due on the 1st.\n' \
+                    '\n'
+
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        if os.path.exists(self.TEMP_FILE):
+            os.remove(self.TEMP_FILE)
+
+    def _write_fixture(self, content: str):
+        """Write test fixture to temp file."""
+        with open(self.TEMP_FILE, 'w') as f:
+            f.write(content)
+
+    def _read_state_lines(self) -> list[str]:
+        """Read all State DONE lines from the temp file."""
+        with open(self.TEMP_FILE) as f:
+            lines = f.readlines()
+        return [l.rstrip() for l in lines if 'State "DONE"' in l]
+
+    def _read_scheduled(self) -> str:
+        """Read the SCHEDULED line from the temp file."""
+        with open(self.TEMP_FILE) as f:
+            lines = f.readlines()
+        for line in lines:
+            m = hq.SCHEDULED_RE.match(line)
+            if m:
+                return m.group(0).strip()
+        return ''
+
+    @patch.object(hq, 'date')
+    def test_state_line_uses_3space_indent(self, mock_date):
+        """State line after toggle should use 3-space indent."""
+        mock_date.today.return_value = date(2026, 5, 18)
+        mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
+        self._write_fixture(self.WEEKDAY_HABIT)
+        result = hq.toggle_habit(self.TEMP_FILE, 'Daily Org Triage')
+        self.assertNotIn('error', result)
+        state_lines = self._read_state_lines()
+        for line in state_lines:
+            # Every state line should start with 3 spaces
+            if '2026-05-18' in line:
+                self.assertTrue(line.startswith('   - State'),
+                                f'State line indent wrong: {repr(line[:20])}')
+
+    @patch.object(hq, 'date')
+    def test_weekday_repeater_advances_to_next_weekday(self, mock_date):
+        """.+1d/2d on Monday advances to Tuesday (skips weekend properly)."""
+        mock_date.today.return_value = date(2026, 5, 18)  # Monday
+        mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
+        self._write_fixture(self.WEEKDAY_HABIT)
+        hq.toggle_habit(self.TEMP_FILE, 'Daily Org Triage')
+        sched = self._read_scheduled()
+        self.assertIn('2026-05-19', sched)  # Tuesday
+        self.assertIn('Tue', sched)
+        self.assertIn('.+1d/2d', sched)
+
+    @patch.object(hq, 'date')
+    def test_weekday_skips_weekends(self, mock_date):
+        """Friday toggle advances to Monday (skips Sat/Sun)."""
+        mock_date.today.return_value = date(2026, 5, 22)  # Friday
+        mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
+
+        friday_habit = '* TODO Weekday Task\n' \
+                       '   SCHEDULED: <2026-05-22 Fri .+1d/2d>\n' \
+                       '   :PROPERTIES:\n' \
+                       '   :STYLE:    habit\n' \
+                       '   :END:\n' \
+                       '\n'
+        self._write_fixture(friday_habit)
+        hq.toggle_habit(self.TEMP_FILE, 'Weekday Task')
+        sched = self._read_scheduled()
+        # Friday toggle → Saturday→Sunday skip → Monday
+        self.assertIn('2026-05-25', sched)  # Monday
+        self.assertIn('Mon', sched)
+
+    @patch.object(hq, 'date')
+    def test_daily_repeater_advances_one_day(self, mock_date):
+        """+1d advances by exactly 1 day."""
+        mock_date.today.return_value = date(2026, 5, 18)  # Monday
+        mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
+        self._write_fixture(self.DAILY_HABIT)
+        hq.toggle_habit(self.TEMP_FILE, 'Daily exercise')
+        sched = self._read_scheduled()
+        self.assertIn('2026-05-19', sched)
+        self.assertIn('+1d', sched)
+
+    @patch.object(hq, 'date')
+    def test_weekly_repeater_advances_seven_days(self, mock_date):
+        """+1w advances by exactly 7 days."""
+        mock_date.today.return_value = date(2026, 5, 18)  # Monday
+        mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
+        self._write_fixture(self.WEEKLY_HABIT)
+        hq.toggle_habit(self.TEMP_FILE, 'Study Anglican liturgy')
+        sched = self._read_scheduled()
+        self.assertIn('2026-05-25', sched)
+        self.assertIn('+1w', sched)
+
+    @patch.object(hq, 'date', wraps=date)
+    def test_monthly_repeater_advances_one_month(self, mock_date):
+        """+1m advances to next month from today."""
+        mock_date.today.return_value = date(2026, 5, 18)  # Monday
+        self._write_fixture(self.MONTHLY_HABIT)
+        hq.toggle_habit(self.TEMP_FILE, 'Pay rent')
+        sched = self._read_scheduled()
+        # May 18 + 1 month → June 18 (keeps today's day, not original SCHEDULED day)
+        self.assertIn('2026-06-18', sched)
+        self.assertIn('+1m', sched)
+
+    @patch.object(hq, 'date')
+    def test_body_preserved_after_toggle(self, mock_date):
+        """Body text should survive toggle."""
+        mock_date.today.return_value = date(2026, 5, 18)
+        mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
+        self._write_fixture(self.WEEKLY_HABIT)
+        hq.toggle_habit(self.TEMP_FILE, 'Study Anglican liturgy')
+        with open(self.TEMP_FILE) as f:
+            text = f.read()
+        self.assertIn('Body content here', text)
+
+    @patch.object(hq, 'date')
+    def test_properties_preserved_after_toggle(self, mock_date):
+        """Properties drawer should survive toggle."""
+        mock_date.today.return_value = date(2026, 5, 18)
+        mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
+        self._write_fixture(self.MONTHLY_HABIT)
+        hq.toggle_habit(self.TEMP_FILE, 'Pay rent')
+        with open(self.TEMP_FILE) as f:
+            text = f.read()
+        self.assertIn(':PROPERTIES:', text)
+        self.assertIn('E463F6634B924F9EB9A95DA5749B767A', text)
+        self.assertIn(':STYLE:    habit', text)
+
+    @patch.object(hq, 'date')
+    def test_existing_state_entries_preserved(self, mock_date):
+        """Old logbook entries should survive toggle."""
+        mock_date.today.return_value = date(2026, 5, 18)
+        mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
+        self._write_fixture(self.WEEKDAY_HABIT)
+        hq.toggle_habit(self.TEMP_FILE, 'Daily Org Triage')
+        with open(self.TEMP_FILE) as f:
+            text = f.read()
+        self.assertIn('[2026-05-16 Sat 06:52]', text)
+
+    @patch.object(hq, 'date')
+    def test_cli_toggle_returns_success(self, mock_date):
+        """CLI --toggle returns toggled=True."""
+        mock_date.today.return_value = date(2026, 5, 18)
+        mock_date.side_effect = lambda *args, **kw: date(*args, **kw)
+        self._write_fixture(self.WEEKDAY_HABIT)
+        result = run_script(self.TEMP_FILE, '--toggle', 'Daily Org Triage')
+        self.assertEqual(result.returncode, 0)
+        data = json.loads(result.stdout)
+        self.assertTrue(data['toggled'])
+        self.assertEqual(data['title'], 'Daily Org Triage')
+    def test_toggle_not_found(self):
+        """--toggle with non-matching title returns error."""
+        self._write_fixture(self.WEEKDAY_HABIT)
+        result = run_script(self.TEMP_FILE, '--toggle', 'nonexistent')
+        self.assertEqual(result.returncode, 1)
+        data = json.loads(result.stdout)
+        self.assertIn('error', data)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

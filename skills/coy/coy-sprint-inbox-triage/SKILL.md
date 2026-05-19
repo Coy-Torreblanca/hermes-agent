@@ -234,26 +234,38 @@ For each approved item:
 2. Clean up any DONE items from inbox
 3. Verify: read tail of destination files to confirm items landed correctly
 
-### Phase 6: Rotate Daily Habit
+### Phase 6: Rotate Daily Habits (including sprint_habits.org)
 
-After triage is complete, also rotate Coy's daily habit:
+After Coy approves moves and refiling is complete, explicitly rotate the **Daily Org Triage** habit (lives in `sprint_habits.org`, not the default personal habits file):
 
-1. Check what's due today:
+1. Check the sprint habits file for the Daily Org Triage habit:
+   ```
+   SPRINT_HABITS=/data/syncthing/Sync/org/work/sprint_habits.org
+   python3 ~/.hermes/scripts/habit_query.py "$SPRINT_HABITS" --due-today
+   python3 ~/.hermes/scripts/habit_query.py "$SPRINT_HABITS" --overdue
+   ```
+2. Present the Daily Org Triage habit to Coy for toggle:
+   ```
+   🔄 SPRINT HABIT:
+   - Daily Org Triage (📆 ${status}) — toggle now that refile is done? (y/n)
+   ```
+3. When Coy approves, toggle it:
+   ```
+   python3 ~/.hermes/scripts/habit_query.py "$SPRINT_HABITS" --toggle "Daily Org Triage"
+   ```
+4. Also check personal habits for Coy convenience:
    ```
    python3 ~/.hermes/scripts/habit_query.py --due-today
    python3 ~/.hermes/scripts/habit_query.py --overdue
    ```
-2. Present to Coy:
+   Present for toggle approval if anything is due/overdue:
    ```
    🔄 HABITS:
    - Due today: 📖 Morning Prayer — toggle? (y/n)
    - Overdue: 🙏 Bible Study (2 days) — catch up?
    ```
-3. For each habit Coy approves, toggle it:
-   ```
-   python3 ~/.hermes/scripts/habit_query.py --toggle "Habit Title"
-   ```
-4. Include in final summary:
+
+5. Include in final summary:
 
    ```
    ✅ Inbox triage + habit rotation complete:
@@ -262,7 +274,8 @@ After triage is complete, also rotate Coy's daily habit:
    - Created new EPICs: N
    - Removed from inbox: N items
    - Needs context: N items (flagged)
-   - 🔄 Habits rotated: N (toggle titles)
+   - 🔄 Daily Org Triage toggled (refile complete)
+   - 🔄 Other habits: N (toggle titles)
    ```
 
 ## Pitfalls

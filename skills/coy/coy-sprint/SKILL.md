@@ -29,6 +29,8 @@ This skill was consolidated from 5 narrow sub-skills (May 2026 curator pass). Th
 | Article → icebox stories + gbrain | `references/article-analysis-workflow.md` | "analyze this article", "create stories for this", "save this for later" |
 | Deferred concept → gbrain-only removal | `references/article-analysis-workflow.md` (P2 branch) | "interesting but too far out", "keep for later", "remove from org" |
 | Bulk EPIC reparenting | `references/org-bulk-reparenting.md` | "move items between EPICs", "reparent backlog", "bulk move", "reorganize EPIC" |
+| Sprint retro + stale detection | `references/org-retro-and-stale.md` | "run sprint retro", "stale backlog", "retro analysis" |
+| Body text → org children | `references/org-body-to-children.md` | "convert these to todos", "break this into subtasks", sections in body text |
 
 This skill retains: rules, context filtering, sabbath mode, accountability tracking, time awareness, consequence tracking, reminders vs todos distinction, conventions, and the parse_backlog.py script.
 
@@ -206,6 +208,30 @@ From `/data/syncthing/Sync/org/work/sprint_habits.org`:
 - **Daily Org Triage** — Clear inbox.org into tasks.org, ensure POINTS/VALUE on new tasks. SCHEDULED: daily (+1d/2d repeat).
 - **Bi-Weekly Sprint Cleanup & Planning** — Run `M-x my/org-end-of-sprint-cleanup`, pull new tasks from backlog into next sprint. SCHEDULED: every 2 weeks (+2w/21d).
 
+## Sprint Boundaries (Date Derivation)
+
+Sprint start and end dates are **derived from the Bi-Weekly Sprint Cleanup habit** — no manual date tracking needed.
+
+| Boundary | Source | How to Read |
+|----------|--------|-------------|
+| **Sprint Start** | Habit's LOGBOOK | Last `- State "DONE" from ...` timestamp |
+| **Sprint End** | Habit's `SCHEDULED:` | The `<YYYY-MM-DD Day ++2w/21d>` date |
+
+**Current sprint (Sprint 4):**
+- Start: `2026-04-11` (last Bi-Weekly cleanup toggle)
+- End: `2026-05-30` (next scheduled cleanup)
+- Duration: ~7 weeks (longer than usual due to mid-sprint correction)
+
+**How to compute:**
+```bash
+python3 ~/.hermes/scripts/habit_query.py /data/syncthing/Sync/org/work/sprint_habits.org --list
+# → Find "Bi-Weekly Sprint Cleanup" → scheduled date + last LOGBOOK timestamp
+```
+
+**Rationale:** The habit already captures both dates naturally through org-mode's SCHEDULED and LOGBOOK. No separate config to maintain. See gbrain [[concepts/sprint-date-derivation]].
+
+[Source: User, Discord, 2026-05-18]
+
 ## Workflow Reference Files (MANDATORY — load via `read_file` before ANY org file operation)
 
 The skill's reference files are the canonical guides for Hermes org-mode operations. **Load these via `read_file` before creating, editing, moving, or deleting any task in tasks.org, inbox.org, or personal.org.** Each reference adapts the Emacs workflow for Hermes agent execution.
@@ -313,6 +339,15 @@ python3 ~/.hermes/scripts/org_query.py \
 # Show what would be written without mutating file
 python3 ~/.hermes/scripts/org_query.py \
   --dry-run '{"title":"New Story","destination":"Personal AI v1","keyword":"STORY","points":3}'
+
+# Sprint retro report (Phase 4 — LIVE, May 2026)
+python3 ~/.hermes/scripts/org_query.py /data/syncthing/Sync/org/work/tasks.org --retro 4
+# Returns JSON: sprint, committed, completed, cancelled, completion_ratio,
+# velocity_pts, blocked_count, blocked_items, completed_items, cancelled_items, pain_points
+
+# Backlog stale detection (Phase 4 — LIVE, May 2026)
+cd /data/.hermes/skills/coy/coy-sprint && python3 scripts/parse_backlog.py --stale 2
+# Flags backlog items untouched for 2+ sprint cycles with ⏰ prefix
 
 # Read back a specific line using raw file I/O (bypasses read_file dedup)
 python3 ~/.hermes/scripts/org_query.py /data/syncthing/Sync/org/inbox.org --verify-line 42
@@ -736,7 +771,7 @@ When creating a todo for setting up a Hermes skill or tool:
 
 ## testing suite
 
-A comprehensive test suite lives at `scripts/tests/` with **128 tests** across 4 files:
+A comprehensive test suite lives at `scripts/tests/` with **148 tests** across 4 files:
 
 ```bash
 ./scripts/tests/run_tests.sh
@@ -744,15 +779,17 @@ A comprehensive test suite lives at `scripts/tests/` with **128 tests** across 4
 
 | Suite | Tests |
 |-------|-------|
-| `test_org_query.py` | 46 — core parsing, queries, validation, stats |
-| `test_habit_query.py` | 52 — habit parsing, streak, status, CLI, reschedule |
-| `test_parse_backlog.py` | 10 — backlog filtering, sort, filters |
+| `test_org_query.py` | 54 — core parsing, queries, validation, stats, **retro (8 NEW)** |
+| `test_habit_query.py` | 63 — habit parsing, streak, status, CLI, reschedule, **toggle (11)** |
+| `test_parse_backlog.py` | 11 — backlog filtering, sort, filters, **stale (1 NEW)** |
 | `test_cli_integration.py` | 20 — end-to-end CLI for org_query |
-| **Total** | **128** |
+| **Total** | **148** |
 
 Run before any deployment that modifies these scripts. See `scripts/tests/README.md`.
 
 **Fixture staleness:** All date-dependent fixtures use `date.today()`-relative generation (see `references/test-fixture-staleness.md`). Never add static fixture dates that can go stale.
+
+**Toggle tests:** The `TestToggle` class (11 tests) validates SCHEDULED advancement for all repeater patterns (`+1d`, `.+1d/2d` weekday-skip, `+1w`, `++2w/21d`, `+2w`, `+1m`), 3-space indent, body/properties preservation, and CLI integration. Uses `@patch.object(hq, 'date', wraps=date)` pattern to fix `date.today()` while preserving real date arithmetic for monthly advancement. See `test_habit_query.py` `TestToggle` class.
 
 ## Answering Story-Specific Status Queries
 
@@ -824,3 +861,9 @@ The false-positive pattern itself is documented in gbrain `concepts/knowledge-gr
 - **🚨 Reparenting existing org hierarchy requires raw Python file I/O.** Moving a STORY from under one parent to another (e.g., making a sibling into a child, or changing level from `****` to `*****`) cannot be done with `patch` — the anchor text is under the wrong hierarchy. Steps: (1) Read both files with `open()` to avoid `read_file` dedup. (2) Extract the block to move (heading + properties + body + children). (3) Adjust all indentation levels (+1 star for demotion, -1 star for promotion). (4) Remove original block from file. (5) Insert new block at the correct position under the new parent. (6) Verify with `org_query.py --children-of "New Parent"`. Discovered May 15, 2026: reparented BSB Translation Tables from `* EPIC Add BSB Bible` direct child to child of new `Add BSB to Bible site` STORY — required demoting `****` → `*****` for the STORY and `*****` → `******` for its children.
 
 - **🚨 Coy can override GOAL/VALUE auto-derivation rules.** The default rule says VALUE and GOAL are triage-only, never auto-derived. When Coy says "infer the goal" or "you can figure it out" — he's explicitly overriding that rule. DO auto-derive from title + context. When he says "high priority, high value" in the same sentence, he means `[#A]` priority and VALUE: Essential. Follow his explicit instruction over the default rule. Discovered May 15, 2026: Coy said "you can infer this goal" for Syncthing context item — he wanted me to derive the GOAL despite the "never auto-derive" rule.
+
+- **🚨 `--sprint N` output includes EPIC headings with cumulative child sums.** The `--sprint` command shows EPIC rows with their CHILDREN's total points summed (e.g., Personal AI v1 shows 83pts — that's the sum of all children with SPRINT:4, not the EPIC's own :POINTS: which is 0). If you naively sum `--sprint` output, you double-count EPIC children. Example: Sprint 4 raw total = 188 (all headings), true committed = 97 (via `--retro`, which correctly excludes EPIC headings). **Always use `--retro N` for committed scope** — it skips EPIC containers. Use `--sprint N` only for listing items, not for point totals. Discovered 2026-05-18: earlier analysis reported 188pts when 97pts was correct.
+
+- **🚨 Body-text sections inside a STORY should become proper org children, not stay as bullet points.** When a STORY lists its sub-items as plain markdown sections (`=== 1. Thing ===`, `- bullet point`, etc.) in the body, those represent distinct work items. Convert them to actual `**** TODO` or `**** DONE` children with proper properties (`:ID:`, `:CREATED:`), timestamps, and state transitions. This makes them trackable, queryable, and filterable by `--children-of`, `--find-active`, and the sprint dashboard. The original body condenses to a summary line. Discovered 2026-05-18: Phase 4 Sprint Intelligence had 4 sections as raw body text — converted to proper children with correct states (2 DONE, 2 TODO).
+
+- **🚨 `%^{...}` org capture templates in properties crash `int()` parsing.** Emacs capture templates can leave raw prompts like `%^{POINTS}p` in `:POINTS:` properties when the interactive prompt isn't replaced during capture. When `org_query.py --retro` or any code that calls `int(h['properties'].get('POINTS', '0'))` encounters this, it raises `ValueError`. **Fix:** Use try/except around `int()` calls that parse org properties — fall back to `0`. Discovered 2026-05-18: `--retro all` crashed on `%^{POINTS}p` in a :POINTS: property.

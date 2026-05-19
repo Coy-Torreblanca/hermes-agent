@@ -18,6 +18,7 @@ import os
 import re as re_module
 import subprocess
 import sys
+import tempfile
 import unittest
 
 # ── Path Setup ─────────────────────────────────────────────────────────────────
@@ -168,6 +169,51 @@ class TestBacklogParsing(unittest.TestCase):
         """Output should go to stdout."""
         result = run_backlog()
         self.assertGreater(len(result.stdout.strip()), 0)
+
+    def test_stale_flag(self):
+        """--stale N should flag items older than N sprint cycles."""
+        # Create a temp org file with one old item and one recent item
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.org', delete=False) as f:
+            f.write("""#+TITLE: Stale Test
+
+** STORY Old item
+:PROPERTIES:
+:ID:       STALE001
+:CREATED:  [2026-01-01]
+:SPRINT:   backlog
+:POINTS:   3
+:VALUE:    Essential
+:GOAL:     Test stale detection
+:END:
+
+** STORY Recent item
+:PROPERTIES:
+:ID:       STALE002
+:CREATED:  [2026-05-17]
+:SPRINT:   backlog
+:POINTS:   2
+:VALUE:    Essential
+:GOAL:     Should not be stale
+:END:
+""")
+            temp_path = f.name
+
+        try:
+            # Run with --stale 1: both items are at least 1 sprint old
+            result = run_backlog("--file", temp_path, "--stale", "1")
+            self.assertEqual(result.returncode, 0)
+            # Old item should have stale marker
+            self.assertIn("⏰", result.stdout,
+                          "Old item should be flagged as stale")
+            # Recent item may or may not be flagged depending on today's date
+
+            # Run with --stale 20: neither item should be flagged
+            result2 = run_backlog("--file", temp_path, "--stale", "20")
+            self.assertEqual(result2.returncode, 0)
+            self.assertNotIn("⏰", result2.stdout,
+                             "Neither item should be flagged with --stale 20")
+        finally:
+            os.unlink(temp_path)
 
 
 if __name__ == "__main__":

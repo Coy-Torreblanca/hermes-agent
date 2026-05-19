@@ -155,6 +155,36 @@ delegate_task(
 todo([{"id": "task-1", "content": "Create User model with email field", "status": "completed"}], merge=True)
 ```
 
+## Parallel Dispatch (for independent tasks)
+
+When tasks in the plan touch **completely different files** (no overlap), dispatch them simultaneously instead of serially. This cuts wall-clock time nearly in half.
+
+**Safety check — only parallelize when:**
+- Tasks modify different files (verified by scanning the plan's "Files:" sections)
+- Tasks do not share mutable state (no shared databases, config files, or global state)
+- Each task's test suite runs independently
+
+**Pattern:**
+
+```python
+# Independent tasks → parallel dispatch
+delegate_task(goal="Task 1: ...", context="...", toolsets=['terminal', 'file'])
+delegate_task(goal="Task 2: ...", context="...", toolsets=['terminal', 'file'])
+
+# Both tasks run concurrently. Results arrive as both complete.
+```
+
+**After both complete:**
+1. Update todo list for both tasks
+2. Run the full test suite once to verify no cross-task interference
+3. Only then proceed to the next serial task (or the next parallel batch)
+
+**Real example (Phase 4 Sprint Intelligence, May 18, 2026):**
+- Task 1: `--stale` flag → modifies `parse_backlog.py` (85 lines)
+- Task 2: `--retro` command → modifies `org_query.py` (975 lines)
+- Different files, no shared state → dispatched in parallel
+- Result: both completed in ~139s wall time (vs ~242s serial), all 148 tests passing
+
 ### 3. Final Review
 
 After ALL tasks are complete, dispatch a final integration reviewer:

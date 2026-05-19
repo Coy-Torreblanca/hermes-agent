@@ -6,10 +6,13 @@ Usage: python3 parse_backlog.py [--max-points N] [--value-only VALUE]
 """
 
 import re, sys, argparse
+from datetime import datetime, date
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--max-points', type=int, default=16)
 parser.add_argument('--value-only', type=str, default=None)
+parser.add_argument('--stale', type=int, default=0,
+                    help='Flag items untouched for N+ sprint cycles (1 sprint ≈ 2 weeks)')
 parser.add_argument('--file', type=str, default='/data/syncthing/Sync/org/work/tasks.org')
 args = parser.parse_args()
 
@@ -30,7 +33,7 @@ for line in content.split('\n'):
             'keyword': heading_match.group(2),
             'priority': heading_match.group(3) or '',
             'title': heading_match.group(4).strip(),
-            'points': '', 'value': '', 'sprint': '', 'goal': ''
+            'points': '', 'value': '', 'sprint': '', 'goal': '', 'created': ''
         }
         continue
 
@@ -39,10 +42,12 @@ for line in content.split('\n'):
         val = re.match(r'\s*:VALUE:\s+(.+)', line)
         spr = re.match(r'\s*:SPRINT:\s+(.+)', line)
         gl = re.match(r'\s*:GOAL:\s+(.+)', line)
+        cr = re.match(r'\s*:CREATED:\s+(.+)', line)
         if pts: current_item['points'] = pts.group(1).strip()
         if val: current_item['value'] = val.group(1).strip()
         if spr: current_item['sprint'] = spr.group(1).strip()
         if gl: current_item['goal'] = gl.group(1).strip()
+        if cr: current_item['created'] = cr.group(1).strip()
 
 if current_item and current_item.get('sprint', '').strip() in ('backlog', ''):
     items.append(current_item)
@@ -65,16 +70,36 @@ for item in items:
             'value': item['value'],
             'keyword': item['keyword'],
             'title': item['title'],
-            'goal': item['goal'][:100] if item.get('goal') else ''
+            'goal': item['goal'][:100] if item.get('goal') else '',
+            'created': item['created'],
+            'stale': False
         })
 
 backlog.sort(key=lambda x: (value_order.get(x['value'], 99), x['points']))
 
+# ── Stale Detection ────────────────────────────────────────────────────────────
+if args.stale > 0:
+    today = date.today()
+    for s in backlog:
+        created_str = s.get('created', '')
+        if created_str:
+            m = re.search(r'(\d{4}-\d{2}-\d{2})', created_str.strip())
+            if m:
+                try:
+                    created_date = datetime.strptime(m.group(1), '%Y-%m-%d').date()
+                    days_old = (today - created_date).days
+                    sprints_old = days_old / 14  # 1 sprint ≈ 2 weeks
+                    if sprints_old >= args.stale:
+                        s['stale'] = True
+                except ValueError:
+                    pass
+
 # Output
 committed = 0
 for s in backlog:
+    stale_marker = "⏰ " if s.get('stale') else ""
     flag = f"[{s['priority']}]" if s['priority'] else "   "
-    print(f"{flag} {s['keyword']} {s['title'][:70]}")
+    print(f"{stale_marker}{flag} {s['keyword']} {s['title'][:70]}")
     print(f"    POINTS: {s['points']} | VALUE: {s['value']}")
     if s['goal']:
         print(f"    GOAL: {s['goal']}")

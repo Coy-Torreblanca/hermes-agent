@@ -672,6 +672,132 @@ def sprint_summary(headings: list[dict], sprint_num: int) -> dict:
     }
 
 
+def compute_retro(headings: list[dict], sprint_str: str) -> dict:
+    """Generate a sprint retrospective report.
+
+    Analyzes all items in a sprint and reports:
+    - Committed, completed, cancelled counts
+    - Completion ratio
+    - Velocity in points
+    - Blocked items (WAITING / STORY-WAITING)
+    - Pain points (items still in progress)
+
+    If sprint_str == "all", aggregates across all sprints.
+    """
+    if sprint_str.lower() == 'all':
+        # Collect all items that have a SPRINT property
+        all_items = []
+        def collect_all_with_sprint(hs):
+            for h in hs:
+                if h['properties'].get('SPRINT', '').strip():
+                    all_items.append(h)
+                collect_all_with_sprint(h['children'])
+        collect_all_with_sprint(headings)
+        items = all_items
+    else:
+        try:
+            sprint_num = int(sprint_str)
+        except ValueError:
+            return {"error": f"Invalid sprint number: {sprint_str}"}
+        items = sprint_items(headings, sprint_num)
+
+    committed = 0
+    total_points_committed = 0
+    completed_items = []
+    cancelled_items = []
+    blocked_items = []
+    pain_items = []
+    completed_points = 0
+
+    for h in items:
+        keyword = h['keyword']
+
+        # Skip EPIC headings — they are planning containers, not work items
+        if keyword == 'EPIC':
+            continue
+
+        body_text = h.get('body_text', '')
+
+        # Detect DONE state transition in logbook area (body lines)
+        has_done_transition = bool(re.search(r'^- State "DONE" from', body_text, re.MULTILINE))
+
+        points = int(h['properties'].get('POINTS', '0'))
+
+        committed += 1
+        total_points_committed += points
+
+        item_info = {
+            'title': h['title'],
+            'keyword': keyword,
+            'points': points,
+            'line': h['line_start'],
+            'epic': h.get('parent_title', '(top-level)'),
+        }
+
+        if keyword == 'CANCELLED':
+            cancelled_items.append(item_info)
+        elif keyword in ('DONE', 'STORY-DONE') or has_done_transition:
+            completed_items.append(item_info)
+            completed_points += points
+        elif keyword in ('WAITING', 'STORY-WAITING'):
+            blocked_items.append(item_info)
+        else:
+            pain_items.append(item_info)
+
+    completion_ratio = round(len(completed_items) / max(committed, 1), 2)
+    completion_by_points = round(completed_points / max(total_points_committed, 1), 2)
+
+    # Derive sprint dates from Bi-Weekly Sprint Cleanup habit
+    sprint_habits_path = Path('/data/syncthing/Sync/org/work/sprint_habits.org')
+    sprint_start = None
+    sprint_end = None
+    if sprint_habits_path.exists():
+        try:
+            import re as _re
+            import datetime as _dt
+            habits_text = sprint_habits_path.read_text()
+            # Find Bi-Weekly Sprint Cleanup section
+            in_habit = False
+            for line in habits_text.split('\n'):
+                if 'Sprint Cleanup' in line and ('STORY' in line or 'TODO' in line):
+                    in_habit = True
+                    continue
+                if in_habit:
+                    # SCHEDULED line for end date
+                    sched_m = _re.search(r'SCHEDULED:\s*<(\d{4}-\d{2}-\d{2})', line)
+                    if sched_m and not sprint_end:
+                        sprint_end = sched_m.group(1)
+                    # State DONE transition for start date (last one = most recent)
+                    if '- State "DONE" from' in line or '- State "DONE"' in line:
+                        ts_m = _re.search(r'\[(\d{4}-\d{2}-\d{2})', line)
+                        if ts_m and sprint_start is None:
+                            sprint_start = ts_m.group(1)  # First match = newest
+                    # Stop at next heading
+                    if line.strip().startswith('*') and 'Sprint Cleanup' not in line:
+                        break
+        except Exception:
+            pass  # Graceful fallback — dates remain None
+
+    return {
+        'sprint': sprint_str,
+        'committed': committed,
+        'completed': len(completed_items),
+        'cancelled': len(cancelled_items),
+        'total_points_committed': total_points_committed,
+        'total_points_completed': completed_points,
+        'completion_ratio': completion_ratio,
+        'completion_by_points': completion_by_points,
+        'velocity_pts': completed_points,
+        'blocked_count': len(blocked_items),
+        'blocked_items': blocked_items,
+        'completed_items': completed_items,
+        'cancelled_items': cancelled_items,
+        'pain_points': pain_items,
+        'sprint_start': sprint_start,
+        'sprint_end': sprint_end,
+    }
+
+
 def insert_point(headings: list[dict], epic_name: str) -> dict:
     """Find where to insert a new child under an EPIC."""
     epic = find_epic(headings, epic_name)
@@ -920,6 +1046,11 @@ def main():
             }
             for h in items
         ], indent=2))
+
+    elif cmd == '--retro':
+        sprint_arg = sys.argv[3] if len(sys.argv) > 3 else '4'
+        result = compute_retro(headings, sprint_arg)
+        print(json.dumps(result, indent=2))
 
     elif cmd == '--insert-point':
         name = sys.argv[3] if len(sys.argv) > 3 else ''
