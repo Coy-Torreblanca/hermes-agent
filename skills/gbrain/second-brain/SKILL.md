@@ -1,7 +1,7 @@
 ---
 name: second-brain
 description: Use when interacting with gbrain — read, write, search, enrich. Load this skill before any gbrain operation. Contains conventions (quality, filing rules, schema, lookup chain) and dispatches to specialized sub-skills.
-version: 1.0.0
+version: 1.1.0
 author: Coy
 license: MIT
 metadata:
@@ -40,6 +40,7 @@ Load this skill when:
 | "share this brain page", "export", "generate a summary" | Call `skill_view` with `name="gbrain-publish"` |
 | "show me the latest report", "run a report", "compare reports" | Call `skill_view` with `name="gbrain-reports"` |
 | "brain health", "maintenance", "fix citations", "audit sources", "check frontmatter", "fix metadata", "validate pages" | Call `skill_view` with `name="gbrain-maintain"` |
+| "check for contradictions", "run the contradiction probe", "brain eval", "brain consistency check", "run the probe", "gbrain eval", "suspected contradictions" | Call `skill_view` with `name="gbrain-maintain"` — then run Operation 10 (Run Contradiction Probe) |
 | "review [project] goals", "overview of planned features", "what's planned for X" | Load the `coy-sprint` skill + `second-brain` and follow `references/project-review-workflow.md` |
 
 > **Note:** `gbrain-citation-fixer` and `gbrain-frontmatter-guard` are sub-operations dispatched by `gbrain-maintain`, not standalone entry points. `gbrain-article-enrichment` is a cron job reference doc, not an interactive skill — the workflow runs automatically as the Sunday cron job. The sub-ingest skills (`gbrain-idea-ingest`, `gbrain-media-ingest`, `gbrain-meeting-ingestion`, `gbrain-voice-note-ingest`) are dispatched by `gbrain-ingest`.

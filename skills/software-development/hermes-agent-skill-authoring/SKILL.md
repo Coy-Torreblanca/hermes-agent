@@ -79,6 +79,12 @@ When you receive a correction signal from the user or the signal detector, do no
 
 A pass that does nothing is a missed learning opportunity, not a neutral outcome.
 
+#### Update Guidance: HOW vs WHETHER
+
+The library architecture guidance below (class-level, references/ directory, support files) shapes **HOW** you update the library — the format and structure of your changes. It is distinct from **WHETHER** to update (covered by the signals above). A correction about structure means: "update this skill but change how you format the update" — not "skip the update."
+
+When the user corrects the format/structure of a skill update (e.g., "make this class-level, add references/, put preferences in SKILL.md body not memory"), apply the structural guidance AND still persist the learning. These are not in conflict — the structural guidance tells you the vessel, the signal tells you to fill it.
+
 #### Signal Categories
 
 When scanning a session for learning signals, check these four categories in priority order:
@@ -97,6 +103,13 @@ When a signal fires, prefer the **earliest action that fits** — don't skip ahe
 1. **UPDATE A CURRENTLY-LOADED SKILL** — If you had a skill loaded via `skill_view()` and it covers the territory of the new learning, patch that one first. It is the skill that was in play, so it's the right one to extend.
 2. **UPDATE AN EXISTING UMBRELLA** — If no loaded skill fits but an existing class-level umbrella does (check via `skills_list` + `skill_view`), patch it. Add a subsection, a pitfall, or broaden a trigger.
 3. **ADD A SUPPORT FILE** under an existing umbrella — Add a `references/`, `templates/`, or `scripts/` file when the learning is a specific recipe, transcript, or reusable probe, not a workflow change. The umbrella's SKILL.md should gain a one-line pointer to the new file so future sessions discover it.
+
+   **Creating support files via skill_manage:** Use `skill_manage(action='write_file', name='<umbrella>', file_path='references/<topic>.md')` (or `templates/`, `scripts/`). The `file_path` must start with `references/`, `templates/`, or `scripts/` — this is validated by the tool. After adding the file, update the umbrella's SKILL.md to include a one-line pointer so future sessions know it exists.
+
+   Each directory has a specific purpose:
+   - **`references/<topic>.md`** — Session-specific detail (error transcripts, reproduction recipes, provider quirks) AND condensed knowledge banks: quoted research, API docs, external authoritative excerpts, or domain notes you found while working on the problem. Write concisely and for the value of the task, not as a full mirror of upstream docs.
+   - **`templates/<name>.<ext>`** — Starter files meant to be copied and modified (boilerplate configs, scaffolding, a known-good example the agent can reproduce with modifications).
+   - **`scripts/<name>.<ext>`** — Statically re-runnable actions the skill can invoke directly (verification scripts, fixture generators, deterministic probes, anything the agent should run rather than hand-type each time).
 4. **CREATE A NEW CLASS-LEVEL UMBRELLA** — Only when no existing skill covers the class. The name MUST be at the class level (not a PR number, error string, feature codename, or today's-session artifact). If the proposed name only makes sense for today's task, fall back to 1, 2, or 3.
 
 If you notice two existing skills that overlap, note it in your reply — the background curator handles consolidation at scale. Don't reorganize the library in a single session; just flag the overlap.
@@ -212,9 +225,9 @@ Pick the closest existing category. Don't invent new top-level categories casual
 6. **🚨 Post-Creation Quality Gate 1: MECE Check.** After creating the skill, verify it doesn't overlap with existing skills:
    - Run `skills_list(category="<target-category>")` or scan the category directory
    - Compare descriptions and triggers of all peers in the same category
-   - If ANY peer would activate on the same user request → flag the overlap, either merge into the existing skill or sharpen the boundary
+   - If ANY peer would activate on the same user request → **flag the overlap in your reply**. Do NOT merge, restructure, or delete the overlapping skill yourself — the background curator handles consolidation at scale. Your job is to identify and report.
    - Check for duplicate names across categories (e.g., same skill name in `coy/` and `research/`)
-   - Document the resolution: if no overlap, note "clean MECE." If overlap found, take action before declaring done.
+   - Document the resolution: if no overlap, note "clean MECE." If overlap found, flag it for the curator.
 7. **🚨 Post-Creation Quality Gate 2: Modularity Check.** After creating the skill, test whether it can be split into multiple child skills:
    - **Read the SKILL.md.** Does it cover multiple distinct task classes that each have their own triggers, workflow, and pitfalls? If a section could be its own `skill_view()` candidate → it's a candidate for splitting.
    - **If multiple skills can be created from this parent:** split the deep-dive content into `references/*.md` or child skills. The SKILL.md should be the *index*, not the entire knowledge base.
@@ -261,7 +274,9 @@ Pick the closest existing category. Don't invent new top-level categories casual
 
 14. **Creating a skill that covers multiple task classes without splitting it.** Don't use arbitrary character thresholds to decide when to split. Instead, ask: *does this SKILL.md cover multiple distinct task classes that each have their own triggers, workflow, and pitfalls?* If a section could be its own `skill_view()` candidate, it should be in a child skill or `references/*.md` file. A single-parent skill (like `coy-sprint` at ~32k) is fine if it's one coherent system — splitting it would produce non-viable fragments. But a multi-concern blob disguised as one skill is an anti-pattern: the SKILL.md should be the *index*, not the entire knowledge base. Move deep-dive content (recipe tables, error catalogs, verbose configuration examples) into `references/*.md` and replace inlined content with a one-line pointer.
 
-15. **Using `skill_view(file_path=...)` to load reference files instead of `read_file` with an absolute path.** When a reference file lives under the skill's `references/` directory (e.g., `references/deep-dive.md`), load it with `read_file` and an absolute path — not `skill_view(file_path='references/deep-dive.md')`.
+15. **Full correction acceptance — don't selectively implement user corrections.** When the user says \"use existing validators, not a custom build\" and names specific tools, accept the FULL specification. Don't implement one part (\"I'll extend --validate\") and reject another (\"orgparse is not needed\"). The correction is a package deal — implementing only the parts you agree with and ignoring others is equivalent to arguing. If the user has to correct you a second time on the same point, the first correction was not fully accepted. Capture the full scope on the first pass. [Source: CoyDiego, 2026-05-19 — three-correction cycle on org syntax checker child TODO: (1) reuse existing validators → (2) incorrectly rejected orgparse → (3) user clarified orgparse IS required]
+
+16. **Using `skill_view(file_path=...)` to load reference files instead of `read_file` with an absolute path.** When a reference file lives under the skill's `references/` directory (e.g., `references/deep-dive.md`), load it with `read_file` and an absolute path — not `skill_view(file_path='references/deep-dive.md')`.
 
     **Rationale:**
     - **Prevents recursive cascade:** `skill_view(file_path=...)` triggers the full skill-loader pipeline, which can itself invoke other `skill_view()` calls, leading to cascading loads and hard-to-trace recursion.

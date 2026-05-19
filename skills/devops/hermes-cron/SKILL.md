@@ -220,6 +220,7 @@ When a skill should be a recurring scheduled task instead of an interactive skil
 - **Using enabled_toolsets too restrictively** — if the job needs gbrain MCP tools, omit enabled_toolsets entirely (gives full tool access) or include the right ones.
 - **Config.yaml vs cron state drift** — Jobs created via `cronjob(action='create')` directly are NOT reflected in config.yaml. Sync.py is ONE-DIRECTIONAL (config → state). If you create a cron job using the cronjob tool, you must manually add it to config.yaml afterward, or it will be invisible to sync.py and lost on the next deploy. Always check `grep "^- name:" /app/hermes_cron/config.yaml | wc -l` against `cronjob(action='list')` count to detect drift.
 - **Inconsistent YAML indentation** — All jobs must use `- name:` at column 0 (no leading spaces). A job with `  - name:` (leading spaces) won't match sync.py's matching logic and will appear as a separate orphan.
+- **🚨 Prompt scope creep — one cron, one purpose.** Do NOT bundle multiple unrelated concerns into one cron prompt. If you find yourself writing steps like "do X, then Y, then Z" where X, Y, Z are different domains, split into separate jobs. Coy explicitly corrected this 2026-05-19: a cron that checked habits, sprint cleanup deadlines, AND the gbrain audit log was too broad. The corrected version only syncs org to gbrain. Each cron should do exactly one thing. If you need multi-step orchestration, use `context_from` to chain jobs instead of bloating a single prompt.
 
 ## Existing Cron Jobs
 
@@ -231,6 +232,7 @@ When a skill should be a recurring scheduled task instead of an interactive skil
 | `gbrain-orphans` | Sat 9 AM | List orphan pages for review | ✅ |
 | `gbrain-article-enrichment` | Sun 9 AM | Auto-enrich orphan articles by linking entities | ❌ Created via cronjob tool — not in config.yaml |
 | `personalai-healthcheck` | Daily 6 AM | Full Personal AI health check (6 categories) | ✅ |
+| `org-hook-habits-checks` | Daily 10 AM, 10 PM | Sync org mode changes to gbrain via audit log | ✅ |
 
 **Note:** `gbrain-article-enrichment` exists in Hermes cron state but was never added
 to config.yaml. To prevent drift, add it manually. All others are defined in

@@ -156,6 +156,19 @@ search_files("*.py", target="files", path="tests/")
 read_file("src/app.py")
 ```
 
+### Step 2.5: Audit Existing Tools & Dependencies Before Proposing New Builds
+
+**Critical:** Before proposing any build-from-scratch solution, verify what already exists. The correction cost of proposing a custom build when a working tool already exists is higher than the integration cost of extending it.
+
+- Search the codebase for existing implementations, validators, linters, parsers
+- Check available packages: `pip list`, `pip install --dry-run <suspected-package>`
+- Check CLI flags and built-in commands of existing project tools (e.g., `--validate`, `--check`)
+- For org-mode tasks specifically: `org_query.py --validate` already ships with SINGLE WIP, ORPHAN_TODO, MISSING POINTS, SPRINT_HIERARCHY checks; `orgparse` (pip) provides full org-mode parsing
+- If an existing tool covers 80% of the need, propose extending it — not replacing it
+- Document what you found in the plan so the implementer doesn't re-research
+
+[Source: CoyDiego correction, 2026-05-19 — org syntax checker child todo proposed custom build when `org_query.py --validate` and `orgparse` already existed.]
+
 ### Step 3: Design Approach
 
 Decide:
@@ -268,6 +281,20 @@ git commit -m "type: description"
 
 **Bad:** "Create the model file"
 **Good:** "Create: `src/models/user.py`"
+
+### Proposing Build-From-Scratch When Existing Tools Already Work
+
+**Bad:** "Build a new org syntax validator with 5 custom checks"
+**Good:** "Extend `org_query.py --validate` (already has 4 checks: SINGLE WIP, ORPHAN_TODO, MISSING POINTS, SPRINT_HIERARCHY) and wire `orgparse` as a pre-parse gate"
+
+Before proposing a custom implementation:
+1. Search for existing tools, libraries, and CLI flags in the project
+2. Check what the project already ships (built-in validators, parsers)
+3. Check available packages via `pip install --dry-run`
+4. Only propose custom build if no existing tool handles the requirement
+5. If extending is viable, propose that instead with a clear "extend, don't replace" reasoning
+
+[Source: CoyDiego, 2026-05-19 — org syntax checker child todo]
 
 ## Execution Handoff
 

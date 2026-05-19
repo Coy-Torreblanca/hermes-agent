@@ -24,6 +24,7 @@ Output: JSON to stdout. Exit codes: 0 = success, 1 = error.
 """
 
 import json
+import os
 import re
 import sys
 import uuid as uuid_lib
@@ -974,7 +975,53 @@ def main():
         filepath = resolve_destination(destination)
         is_dry_run = first_arg == '--dry-run'
 
+        # ─── Post-change hook: capture pre-state ──
+        hook_instance = None
+        try:
+            from org_change_hook import OrgChangeHook
+            hook_instance = OrgChangeHook()
+            hook_instance.process_write(
+                script_name='org_query.py',
+                operation='create_todo' if not is_dry_run else 'dry_run',
+                filepath=filepath,
+                params=params,
+            )
+        except Exception as e:
+            hook_instance = None
+
         result = create_todo(filepath, params, dry_run=is_dry_run)
+
+        # ─── Post-change hook: analyze after write (only on success, not dry-run) ──
+        if hook_instance and 'error' not in result:
+            try:
+                from org_gbrain_adapter import GbrainUpdateAdapter
+                hook_result = hook_instance.finalize({
+                    'filepath': filepath,
+                    'script_name': 'org_query.py',
+                    'operation': 'create_todo' if not is_dry_run else 'dry_run',
+                })
+                adapter = GbrainUpdateAdapter()
+                gbrain_result = adapter.evaluate(hook_result)
+                # Append gbrain recommendation to output
+                result['_gbrain_hook'] = {
+                    'merits_gbrain': gbrain_result['merits_gbrain'],
+                    'decision_count': gbrain_result.get('decision_count', 0),
+                    'classification': hook_result.get('classification'),
+                    'reason': hook_result.get('reason'),
+                    'decisions': [
+                        {
+                            'entity': d['entity'],
+                            'action': d['action'],
+                            'slug': d['suggested_slug'],
+                            'reason': d['reason'],
+                        }
+                        for d in gbrain_result.get('decisions', [])
+                    ],
+                    'audit_logged': hook_result.get('audit', {}).get('logged', False),
+                }
+            except Exception as e:
+                result['_gbrain_hook'] = {'error': str(e)}
+
         print(json.dumps(result, indent=2))
         return
 

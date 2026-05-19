@@ -96,3 +96,92 @@ Hermes skill that automates sprint planning:
 ```
 
 [Source: CoyDiego, Discord Lab/#secondbrain, 2026-05-18 — phase 4 items converted from body to children]
+
+## Pattern: Prose Sentence Requirements → Implementation Plans
+
+When a STORY body contains plain-prose sentences (not markdown headers or bullet points), each sentence that describes a distinct requirement should become a child TODO with a numbered implementation plan.
+
+### Signal Detection
+
+Look for body text that is:
+- 2-5 standalone prose sentences, each describing a distinct work item
+- Not structured as markdown (`===`, `- bullets`, numbered lists)
+- Each sentence starts with "Any changes to...", "The system should...", or similar requirement language
+
+### Workflow
+
+**Step 1: Identify Requirements.** Each complete sentence that describes one capability or constraint is a candidate. Sentences linked by "and" may need splitting.
+
+**Step 2: Assess Implementability.** If a sentence describes a concrete thing to build/integrate/check, it's a child. If it's a constraint note or context, keep it in the parent body.
+
+**Step 3: Generate numbered implementation plan.** Each child gets:
+- `**** TODO` keyword (no :SPRINT: or :VALUE: — inherited from STORY parent)
+- `:ID:` — auto-generated 16-char hex UUID
+- `:CREATED:` — today in `[YYYY-MM-DD Day]` format
+- `:GOAL:` — one-line restatement of the requirement
+- `Implementation Plan:` body with 3-6 numbered steps, each a concrete build action
+- Numbered steps should be explicit: file paths, tool names (e.g., "pip install orgparse"), existing tools to extend (e.g., "add --validate checks for...")
+
+### Example
+
+**Before:**
+```
+*** STORY Create a scripts for deterministic org changes
+:PROPERTIES:
+:ID:       B1B82159-CC6C-447D-9432-AD4515611FDB
+:GOAL:     Org changes ensure org syntax and gbrain is updated
+:END:
+
+Any changes to an org file needs to run a llm which has context of changes and gbrain tooling with requirement that it updates gbrain.
+
+Any changes to an org file need to be followed up with a org syntax checker to validate that changes were valid.
+```
+
+**After:**
+```
+*** STORY Create a scripts for deterministic org changes
+:PROPERTIES:
+:ID:       B1B82159-CC6C-447D-9432-AD4515611FDB
+:GOAL:     Org changes ensure org syntax and gbrain is updated
+:END:
+
+Two post-change hooks: LLM-driven gbrain update on structural changes, and org syntax validator using orgparse + --validate.
+
+**** TODO LLM-driven gbrain update on org changes
+:PROPERTIES:
+:ID:       A9ED83B358424080
+:CREATED:  [2026-05-19 Tue]
+:GOAL:     When org-change scripts modify .org files, an LLM pass automatically updates gbrain with context of changes
+:END:
+
+Implementation Plan:
+1. Design post-change hook architecture
+2. Build gbrain update adapter using gbrain page-writer skill
+3. Handle diff analysis (new stories, metadata edits, state transitions)
+4. Route to LLM via Hermes subagent with gbrain context
+5. Auto-classify which changes merit gbrain updates
+6. Add audit logging
+
+**** TODO Org syntax checker for post-change validation
+:PROPERTIES:
+:ID:       B9401435D0F745E2
+:CREATED:  [2026-05-19 Tue]
+:GOAL:     After any org file change, a validator catches syntax errors before they corrupt the file
+:END:
+
+Implementation Plan:
+1. Install orgparse (pip) — REQUIRED dependency for AST-based structural validation
+2. Build validation layer using orgparse (drawer pairing, heading tree integrity, property correctness)
+3. Keep existing org_query.py --validate for business rules (SINGLE WIP, ORPHAN_TODO, etc.)
+4. Integrate as automatic post-hook after any org-writing operation
+5. Return structured pass/fail with line-level errors
+6. Gate on validation — fail the write if invalid
+```
+
+### Pitfalls
+
+- **Don't write vague steps.** "Set up validation" is too vague — specify the tool (orgparse), the flag to add (--validate), and what it checks.
+- **Don't forget tool choices on iterative correction.** When the user specifies a tool (orgparse, --validate) during feedback, capture it as a REQUIRED dependency in the plan. Don't treat it as optional or subject to revision without user confirmation.
+- **Don't skip the :GOAL: field.** Each child needs a one-line GOAL so the sprint dashboard shows what it's for.
+
+[Source: CoyDiego, Discord, 2026-05-19 — deterministic org changes story split into 2 child TODOs with implementation plans]
